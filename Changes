@@ -9,3 +9,8 @@ Revision history for Perl extension Text::Ngrams.
 0.03  Mon Jun  9 07:05:00 ADT 2003
 	- fixed test cases 3, 5, and 7 (problems found thanks to
 	cpan-testers, Josts Smokehouse)
+
+0.04  Jun 11 2003
+	- added parameter 'limit' to new
+        - added non-ordered print
+        - added paramter 'onlyfirst' to print

@@ -1,6 +1,4 @@
 # (c) 2003 Vlado Keselj www.cs.dal.ca/~vlado
-#
-# $Id: Ngrams.pm,v 1.7 2003/06/07 03:16:02 vlado Exp $
 
 package Text::Ngrams;
 
@@ -12,11 +10,11 @@ our @ISA = qw(Exporter);
 our %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(new);
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.7 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.14 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 
@@ -53,16 +51,22 @@ sub new {
       $self->{tokenrex} = qr/([a-zA-Z]+|(\d+(\.\d+)?|\d*\.\d+)([eE][-+]?\d+)?)/;
       $self->{processtoken} = sub { s/(\d+(\.\d+)?|\d*\.\d+)([eE][-+]?\d+)?/<NUMBER>/ }
   }
-  else { die "unknown type $params{type}" }
+  else { die "unknown type: $params{type}" }
 
-  $self->{table} = [ ];
-  $self->{total} = [ ];
-  $self->{lastngram} = [ ];
+  $self->{'table'} = [ ];
+  $self->{'total'} = [ ];
+  $self->{'total_distinct_count'} = 0;
+  $self->{'lastngram'} = [ ];
 
   foreach my $i ( 1 .. $self->{windowsize} ) {
       $self->{table}[$i] = { };
       $self->{total}[$i] = 0;
       $self->{lastngram}[$i] = '';
+  }
+
+  if (exists($params{'limit'})) {
+      die "limit=$params{'limit'}" if $params{'limit'} < 1;
+      $self->{'limit'} = $params{'limit'};
   }
 
   bless($self, $package);
@@ -79,13 +83,25 @@ sub feed_tokens {
 		$self->{lastngram}[$n] = $self->{lastngram}[$n-1] .
 		    $self->{tokenseparator} . $t;
 	    } else { $self->{lastngram}[$n] = $t }
-	    $self->{table}[$n]{$self->{lastngram}[$n]} += 1;
-	    $self->{total}[$n] += 1;
+
+	    if ( ($self->{table}[$n]{$self->{lastngram}[$n]} += 1)==1)
+	    { $self->{'total_distinct_count'} += 1 }
+
+	    $self->{'total'}[$n] += 1;
 	}
     }
+    if (exists($self->{'limit'}) and
+	$self->{'total_distinct_count'} > 2 * $self->{'limit'})
+    { $self->_reduce_to_limit }
 }
 
 sub process_text {
+    my $self = shift;
+    $self->_process_text(@_);
+    if (exists($self->{'limit'})) { $self->_reduce_to_limit }
+}    
+
+sub _process_text {
     my $self = shift;
     my (@tokens);
     while (@_) {
@@ -116,15 +132,48 @@ sub process_files {
 	{ open($f1, "$f") or die "cannot open $f:$!" }
 	else { $f1 = $f }
 
-	while (<$f1>) { $self->process_text($_) }
+	while (<$f1>) { $self->_process_text($_) }
+	close($f1) if not ref($f);
+	if (exists($self->{'limit'})) { $self->_reduce_to_limit }
+    }
+}
 
-	close($f1);
+sub _reduce_to_limit {
+    my $self = shift;
+    return unless exists($self->{'limit'}) and
+	$self->{'limit'} > 0;
+
+    while ($self->{'total_distinct_count'} > $self->{'limit'}) {
+	for (my $prunefrequency=1;; ++$prunefrequency) {
+	    foreach my $n (1 .. $self->{'windowsize'}) {
+
+		my @keys = keys(%{$self->{table}[$n]});
+		foreach my $ngram (@keys) {
+		    if ($self->{table}[$n]{$ngram} <= $prunefrequency) {
+			delete $self->{'table'}[$n]{$ngram};
+			$self->{'total'}[$n] -= $prunefrequency;
+			$self->{'total_distinct_count'} -= 1;
+		    }
+		}
+
+		return if $self->{'total_distinct_count'} <= $self->{'limit'};
+
+	    }
+	}
     }
 }
 
 sub to_string {
     my $self = shift;
     my (%params) = @_;
+    my $onlyfirst = exists($params{'onlyfirst'}) ?
+	$params{'onlyfirst'} : '';
+
+    my $out =  exists($params{'out'}) ? $params{'out'} : '';
+    my $outh = $out;
+    if ($out and (not ref($out))) 
+    { open($outh, ">$out") or die "cannot open $out:$!" }
+
     my $ret = "BEGIN OUTPUT BY Text::Ngrams version $VERSION\n\n";
 
     foreach my $n (1 .. $self->{windowsize}) {
@@ -133,24 +182,39 @@ sub to_string {
         }
 
 	my @keys;
-	if (!exists($params{'orderby'}))
+	if (!exists($params{'orderby'}) or $params{'orderby'} eq 'ngram')
 	{ @keys = sort(keys(%{$self->{table}[$n]})) }
+	elsif ($params{'orderby'} eq 'none') {
+	    die "onlyfirst requires order" if $onlyfirst;
+	    @keys = keys(%{$self->{table}[$n]})
+	    }
 	elsif ($params{'orderby'} eq 'frequency') {
 	    @keys = sort { $self->{table}[$n]{$b} <=>
 			   $self->{table}[$n]{$a} }
 	            keys(%{$self->{table}[$n]});
 	}
-	else { @keys = sort(keys(%{$self->{table}[$n]})) }
-	
+	else { die }
+
+	@keys = splice(@keys,0,$onlyfirst) if $onlyfirst;
+
 	foreach my $ngram (@keys) {
 	    $ret .= &encode_S($ngram) . "\t"
 		. $self->{table}[$n]{$ngram} . "\n";
+	    if ($out) { print $outh $ret; $ret = '' }
+
 	}
 
 	$ret .= "\n";
     }
 
-    return $ret . "END OUTPUT BY Text::Ngrams\n";
+    $ret .= "END OUTPUT BY Text::Ngrams\n";
+
+    if ($out) {
+	print $outh $ret; $ret = '';
+	close($outh) if not ref($out);
+    }
+
+    return $ret;
 }
 
 # http://www.cs.dal.ca/~vlado/srcperl/snip/decode_S
@@ -241,6 +305,10 @@ or different types of n-grams, e.g.:
   my $ng = Text::Ngrams->new( type => byte );
   my $ng = Text::Ngrams->new( type => word );
 
+or limit the total number of n-grams (less-frequent ones will be
+pruned):
+
+  my $ng = Text::Ngrams->new( limit => 10 );
 
 =head1 DESCRIPTION
 
@@ -367,17 +435,28 @@ Or, in case of byte type of processing:
 
 =head1 METHODS
 
-=head2 new ( windowsize => POS_INTEGER, type => character|byte|word )
+=head2 new ( windowsize => POS_INTEGER, type => character|byte|word, limit => POS_INTEGER )
 
   my $ng = Text::Ngrams->new;
   my $ng = Text::Ngrams->new( windowsize=>10 );
   my $ng = Text::Ngrams->new( type=>'word' );
+  my $ng = Text::Ngrams->new( limit=>10000 );
   and similar.
 
 Creates a new C<Text::Ngrams> object and returns it.
 Parameters:
 
 =over 4
+
+=item limit
+
+Limit the number of distinct n-grams.  Processing large files may be
+slow, so you can limit the total number of distinct n-grams which are
+counted to speed up processing.
+Less-frequent ones will be deleted.
+
+Beware: If a limit is set, the n-gram counts at the end may not be
+correct due to periodical pruning of n-grams.
 
 =item windowsize
 
@@ -468,14 +547,25 @@ Process files, similarly to text.
 The files are processed line by line, so there should not be any
 multi-line tokens.
 
-=head2 to_string ( orderby => 'frequency' )
+=head2 to_string ( orderby => 'ngram|frequency|none', onlyfirst => NUMBER, out => filename|handle )
 
   print $ng3->to_string;
   print $ng->to_string( orderby=>'frequency' );
+  print $ng->to_string( orderby=>'frequency', onlyfirst=>10000 );
 
 Produce string representation of the n-gram tables.
-If parameter 'orderyby=>frequency' is specified, each table is ordered
-by decreasing frequency.
+The parameter orderby specifies the order of n-grams.  The default
+value is 'ngram'.
+
+The parameter C<onlyfirst> causes printing only this many first n-grams
+for each n.  It is incompatible with C<orderby=>'none'>.
+
+The method C<to_string> produces n-gram tables.  However, if those
+tables are large and we know that we will write them to a file
+right after processing, it may save memory and time to provide the
+parameter C<out>, which is a filename or reference to a file handle.
+(Experiments on my machine do not show significant improvement nor degradation.)
+Filename will be opened and closed, while the file handle will not.
 
 =head2 encode_S ( string )
 
@@ -529,20 +619,54 @@ A n-gram language modeling package written in C++.
 
 =back
 
+=head1 PERFORMANCE
+
+The preformance can vary a lot depending on the type of file, in
+particular on the content entropy.  For example a file in English is
+processed faster than a file in Chinese, due to a larger number of
+distinct n-grams.
+
+The following tests are preformed on a Pentium-III 550MHz, 512MB
+memory, Linux Red Hat 6 platform.  (See L<ngrams.pl> - the script is
+included in this package.)
+
+  ngrams.pl --n=10 --type=byte 1Mfile
+
+The 1Mfile is a 1MB file of Chinese text.  The program spent
+consistently 20 sec per 100KB, giving 200 seconds (3min and 20sec) for
+the whole file.  However, after 4 minutes I gave up on waiting for
+n-grams to be printed.  The bottleneck seems to be encode_S function,
+so after:
+
+  ngrams.pl -n=10 --type=byte --orderby=frequency --onlyfirst=5000 1Mfile
+
+it took about 3:24 + 5 =~ 9 minutes to print.  After changing
+C<ngrams.pl> so that it provides parameter C<out> to C<to_string> in
+module C<Ngrams.pm> (see Text::Ngrams), it still took:
+3:09+1:28+4:40=9:17.
+
 =head1 LIMITATIONS
 
-If a user customizes a type, it is possible that a resulting n-gram will be ambiguous.
-In this way, to different n-grams may be counted as one.  With predefined types of n-grams,
-this should not happen.
-
-For example, if a user chooses that a token can contain a space, and uses space as an n-gram
-separator, then a trigram like this "x x x x" is ambiguous.
+If a user customizes a type, it is possible that a resulting n-gram
+will be ambiguous.  In this way, to different n-grams may be counted
+as one.  With predefined types of n-grams, this should not happen.
+For example, if a user chooses that a token can contain a space, and
+uses space as an n-gram separator, then a trigram like this "x x x x"
+is ambiguous.
 
 Method process_file does not handle multi-line tokens by default.
-There are various ways around this.  Probably the best one is to read
-text as much text as we want and then to use process_text, which does
-handle multi-line tokens.  Otherwise, it does not seem to be worth
-changing the code.
+This can be fixed, but it does not seem to be worth the code
+complication.  There are various ways around this if one really needs
+such tokens:  One way is to preprocess them.  Another way is to read
+as much text as necessary at a time then to use process_text, which
+does handle multi-line tokens.
+
+=head1 THANKS
+
+I'd like to thank Jost Kriege for bug report.
+
+I will be grateful for comments, bug reports, or just letting me know
+that you used the module.
 
 =head1 AUTHOR
 
@@ -564,3 +688,4 @@ Simon Cozen's Text::Ngram module in CPAN.
 The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
 
 =cut
+# $Id: Ngrams.pm,v 1.14 2003/06/12 10:01:14 vlado Exp $

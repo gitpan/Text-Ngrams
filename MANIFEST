@@ -18,3 +18,8 @@ t/6.t
 t/7.t
 t/7.out
 t/auxfunctions.pl
+t/8.in
+t/8.out
+t/8.t
+t/9.out
+t/9.t

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use Test::More tests => 4;
+use Test::More tests => 5;
 use_ok("Text::Ngrams");
 require 't/auxfunctions.pl';
 
@@ -15,7 +15,11 @@ $ng3->feed_tokens('g');
 $ng3->feed_tokens('h');
 
 is(normalize(scalar(getfile('t/1.out'))),
-   normalize($ng3->to_string));
+   normalize($ng3->to_string( 'orderby' => 'ngram' )));
+
+is($ng3->{'total_distinct_count'}, 21);
+
+print $ng3->{'total_distinct_count'}."\n";
 
 is(Text::Ngrams::encode_S("abc\n\t\xF6lado"),
    'abc\\n\\t^vlado');

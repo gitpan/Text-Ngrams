@@ -12,4 +12,4 @@ $ng->process_text(
 ');
 
 is(normalize(scalar(getfile('t/4.out'))),
-   normalize($ng->to_string));
+   normalize($ng->to_string('orderby' => 'ngram' )));

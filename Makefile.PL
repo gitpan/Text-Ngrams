@@ -21,7 +21,7 @@ WriteMakefile (
    'PL_FILES' => {},
    ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
     (ABSTRACT_FROM => $name, # retrieve abstract from module
-     AUTHOR     => 'Vlado Keselj www.cs.dal.ca/~vkeselj') : 
+     AUTHOR     => 'Vlado Keselj www.cs.dal.ca/~vlado') : 
     ()
     ),
     EXE_FILES => [ 'ngrams.pl' ],

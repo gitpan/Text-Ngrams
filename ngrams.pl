@@ -2,13 +2,12 @@
 
 use strict;
 use vars qw($VERSION);
+$VERSION = sprintf "%d.%d", q$Revision: 1.7 $ =~ /(\d+)/g;
+
 use Text::Ngrams;
-
-$VERSION = sprintf "%d.%d", q$Revision: 1.3 $ =~ /(\d+)/g;
-
 use Getopt::Long;
 
-my ($help, $version, $orderbyfrequency);
+my ($help, $version, $orderby, $onlyfirst, $limit);
 my $n = 3;
 my $type = 'character';
 
@@ -20,9 +19,11 @@ Options:
 --n=N		The default is 3-grams.
 --type=T        The default is character.  For more types see
                 Text::Ngrams module.
+--limit=N       Limit the number of distinct n-grams.
 --help		Show this help.
 --version	Show version.
---orderbyfrequency To order the output by frequency.
+--orderby=ARG   ARG can be: frequency or ngram.
+--onlyfirst=N   Only first N ngrams are printed for each n.
 
 The options can be shortened to their unique prefixes and
 the two dashes to one dash.  No files means using STDIN.
@@ -34,9 +35,11 @@ help()
     unless
       GetOptions('n=i'        => \$n,
 		 'type=s'     => \$type,
+		 'limit=i'    => \$limit,
 		 'help'       => \$help,
 		 'version'    => \$version,
-                 'orderbyfrequency' => \$orderbyfrequency);
+                 'orderby=s'  => \$orderby,
+                 'onlyfirst=i' => \$onlyfirst);
 
 help() if $n < 1 || int($n) != $n;
 
@@ -48,13 +51,21 @@ sub version {
 help()    if $help;
 version() if $version;
 
-my $ng = Text::Ngrams->new( windowsize=>$n, type=>$type);
+my %params = ( windowsize=>$n, type=>$type);
+
+if (defined($limit) and ($limit > 0)) { $params{'limit'} = $limit }
+
+my $ng = Text::Ngrams->new( %params );
 
 if ($#ARGV > -1) { $ng->process_files(@ARGV) }
 else { $ng->process_files(\*STDIN) }
 
-print $orderbyfrequency ? $ng->to_string( orderby=>'frequency' )
-    : $ng->to_string();
+%params = ( 'out' => \*STDOUT );
+if (defined($orderby) and $orderby) { $params{'orderby'} = $orderby }
+if (defined($onlyfirst) and $onlyfirst>0) { $params{'onlyfirst'} = $onlyfirst }
+
+print $ng->to_string( %params );
+
 exit(0);
 
 __END__
@@ -64,7 +75,8 @@ ngrams - Compute the ngram frequencies and produce tables to the stdout.
 
 =head1 SYNOPIS
 
-  ngram [--version] [--help] [--n=3] [--type=character] [--orderbyfrequency] [input files]
+  ngram [--version] [--help] [--n=3] [--type=TYPE] [--orderby=ORD]
+        [--onlyfirst=N] [input files]
 
 =head1 DESCRIPTION
 
@@ -73,6 +85,16 @@ ouput.
 
 Options:
 =over 4
+
+=item --=NUMBER
+
+Prints only the first NUMBER n-grams for each n.  See Text::Ngrams module.
+
+=item --limit=NUMBER
+
+Limit the total number of distinct n-grams (for efficiency reasons,
+the counts may not be correct at the end).
+
 =item --version
 
 Prints version.
@@ -85,14 +107,13 @@ Prints help.
 
 N-gram size, produces 3-grams by default.
 
+=item --orderby=frequency|ngram
+
+The n-gram order.  See Text::Ngrams module.
+
 =item --type=character|byte|word
 
 Type of n-grams produces. See Text::Ngrams module.
-
-=item --orderbyfrequency
-
-By default, the n-grams are ordered lexicographically.  If this option
-is specified, then they are ordered by frequency in descending order.
 
 =head1 PREREQUISITES
 
@@ -102,6 +123,11 @@ Getopt::Long
 =head1 SCRIPT CATEGORIES
 
 Text::Statistics
+
+=head1 README
+
+N-gram analysis for various kinds of n-grams (character, words, bytes,
+and user-defined). Based on Text::Ngrams module.
 
 =head1 SEE ALSO
 

@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: 5.t,v 1.3 2003/06/09 10:44:48 vlado Exp $
+# $Id: 5.t,v 1.4 2003/06/11 15:02:01 vlado Exp $
 
 use Test::More tests => 2;
 use_ok("Text::Ngrams");
@@ -9,4 +9,4 @@ my $ng = Text::Ngrams->new(windowsize=>2, type=>'word');
 $ng->process_files('t/5.in');
 
 is(normalize(scalar(getfile('t/3.out'))),
-   normalize($ng->to_string));
+   normalize($ng->to_string('orderby'=>'ngram')));

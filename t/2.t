@@ -8,7 +8,7 @@ my $ng3 = Text::Ngrams->new;
 $ng3->process_text('abcdefg1235678hijklmnop');
 
 is(normalize(scalar(getfile('t/2.out'))),
-   normalize($ng3->to_string));
+   normalize($ng3->to_string( 'orderby'=>'ngram' )));
 
 is(encode_S("abc\n\t\xF6lado"),
    'abc\\n\\t^vlado');
