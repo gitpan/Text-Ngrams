@@ -29,4 +29,10 @@ Revision history for Perl extension Text::Ngrams.
 	- documentation improvement
 	- introduced first and last n-gram in the output
 	- made _reduce_to_limit more efficient (--limit parameter)
+	  thanks to observations by David Allen
 
+1.3   Mon Nov  1 12:52:02 AST 2004
+	- Improved for multi-line token processing
+	- resolved efficiency issue with binary file (not reading line
+  	  by line any more)
+	- introduced parameters skipinsert and allow_iproc

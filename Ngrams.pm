@@ -11,11 +11,11 @@ our @ISA = qw(Exporter);
 our %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(new);
-our $VERSION = '1.2';
+our $VERSION = '1.3';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.23 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.25 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 
@@ -38,7 +38,8 @@ sub new {
       $self->{tokenseparator} = '';
       $self->{skiprex} = '';
       $self->{tokenrex} = qr/([a-zA-Z]|[^a-zA-Z]+)/;
-      $self->{processtoken} =  sub { s/[^a-zA-Z]+/ /; $_ = uc $_ }
+      $self->{processtoken} =  sub { s/[^a-zA-Z]+/ /; $_ = uc $_ };
+      $self->{allow_iproc} = 1;
   }
   elsif ($params{type} eq 'byte') {
       $self->{tokenseparator} = '';
@@ -49,6 +50,7 @@ sub new {
   elsif ($params{type} eq 'word') {
       $self->{tokenseparator} = ' ';
       $self->{skiprex} = qr/[^a-zA-Z0-9]+/;
+      $self->{skipinsert} = ' ';
       $self->{tokenrex} = qr/([a-zA-Z]+|(\d+(\.\d+)?|\d*\.\d+)([eE][-+]?\d+)?)/;
       $self->{processtoken} = sub { s/(\d+(\.\d+)?|\d*\.\d+)([eE][-+]?\d+)?/<NUMBER>/ }
   }
@@ -105,31 +107,58 @@ sub feed_tokens {
 
 sub process_text {
     my $self = shift;
-    $self->_process_text(@_);
+    $self->_process_text(0, @_);
     if (exists($self->{'limit'})) { $self->_reduce_to_limit }
 }    
 
 sub _process_text {
     my $self = shift;
+    my $cont = shift; # the minimal number of chars left for
+                      # continuation (the new-line problem, and the
+                      # problem with too long lines)
+                      # The remainder of unprocessed string is
+                      # returned.
+    if ($cont < 0) { $cont = 0 }
     my (@tokens);
+    my $text;
     while (@_) {
-	my $text = shift @_;
+	$text .= shift @_;
 	while (length($text) > 0) {
-	    if ($self->{skiprex} ne '') { $text =~ s/^$self->{skiprex}// }
-	    last if length($text) == 0;
+	    my $textl = $text;
+	    my $skip = '';
+	    if ($self->{skiprex} ne '' && $textl =~ /^$self->{skiprex}/)
+	    { $skip = $&; $textl = $'; }
+	    if (defined($self->{skipinsert})) {
+		$skip = $self->{skipinsert};
+		$text = $skip.$textl;
+	    }
+	    if (length($textl) < $cont) { last }
+	    if (length($textl)==0) { $text=$textl; last; }
+
 	    local $_;
 	    if ($self->{tokenrex} ne '') {
-		$text =~ /^$self->{tokenrex}/ or die;
-		$_ = $&; $text = $'; die unless length($_) > 0;
+		if ($textl =~ /^$self->{tokenrex}/)
+		{ $_ = $&; $textl = $'; }
 	    }
 	    else
-	    { $_ = substr($text, 0, 1); $text = substr($text, 1) }
+	    { $_ = substr($textl, 0, 1); $textl = substr($textl, 1) }
+	    last if $_ eq '';
+
+	    if (length($textl) < $cont) {
+		if (defined($self->{allow_iproc}) && $self->{allow_iproc}
+		    && ref($self->{processtoken}) eq 'CODE')
+		{ &{$self->{processtoken}} }
+		$text = $skip.$_.$textl;
+		last;
+	    }
 	    if (ref($self->{processtoken}) eq 'CODE')
 	    { &{$self->{processtoken}} }
 	    push @tokens, $_;
+	    $text = $textl;
 	}
     }
     $self->feed_tokens(@tokens);
+    return $text;
 }
 
 sub process_files {
@@ -140,7 +169,16 @@ sub process_files {
 	{ open($f1, "$f") or die "cannot open $f:$!" }
 	else { $f1 = $f }
 
-	while (<$f1>) { $self->_process_text($_) }
+	my ($text, $text_l) = ('', 0);
+	while (1) {
+	    $text_l = length($text);
+	    read($f1, $text, 1024, length($text));
+	    #$text.= <$f1>;
+	    last if length($text) <= $text_l;
+	    $text = $self->_process_text(1, $text);
+	}
+	$text = $self->_process_text(0, $text);
+
 	close($f1) if not ref($f);
 	if (exists($self->{'limit'})) { $self->_reduce_to_limit }
     }
@@ -518,10 +556,16 @@ $o->{tokenseparator} - string used to be inserted between tokens in n-gram
 
 $o->{skiprex} - regular expression for ignoring stuff between tokens.
 
+$o->{skipinsert} - string to be replace a skiprex match that makes
+    string too short (efficiency issue)
+
 $o->{tokenrex} - regular expression for recognizing a token.  If it is
 empty, it means chopping off one character.
 
 $o->{processtoken} - routine for token preprocessing.  Token is given and returned in $_.
+
+$o->{allow_iproc} - boolean, if set to true (1) allowes for incomplete
+    tokens to be preprocessed and put back (efficiency motivation)
 
 For example, the types character, byte, and word are defined in the
 foolowing way:
@@ -531,6 +575,7 @@ foolowing way:
       $self->{skiprex} = '';
       $self->{tokenrex} = qr/([a-zA-Z]|[^a-zA-Z]+)/;
       $self->{processtoken} =  sub { s/[^a-zA-Z]+/ /; $_ = uc $_ }
+      $self->{allow_iproc} = 1;
   }
   elsif ($params{type} eq 'byte') {
       $self->{tokenseparator} = '';
@@ -541,6 +586,7 @@ foolowing way:
   elsif ($params{type} eq 'word') {
       $self->{tokenseparator} = ' ';
       $self->{skiprex} = qr/[^a-zA-Z0-9]+/;
+      $self->{skipinsert} = ' ';
       $self->{tokenrex} = qr/([a-zA-Z]+|(\d+(\.\d+)?|\d*\.\d+)([eE][-+]?\d+)?)/;
       $self->{processtoken} = sub { s/(\d+(\.\d+)?|\d*\.\d+)([eE][-+]?\d+)?/<NUMBER>/ }
   }
@@ -685,7 +731,7 @@ so after:
 it took about 3:24 + 5 =~ 9 minutes to print.  After changing
 C<ngrams.pl> so that it provides parameter C<out> to C<to_string> in
 module C<Ngrams.pm> (see Text::Ngrams), it still took:
-3:09+1:28+4:40=9:17.
+3:09+1:28+4:40=9.17.
 
 =head1 LIMITATIONS
 
@@ -705,10 +751,9 @@ does handle multi-line tokens.
 
 =head1 THANKS
 
-I'd like to thank Jost Kriege and Shlomo Yona for bug reports,
-comments, and/or encouragement,
-David Allen for localizing and reporting an important efficiency issue
-with ngram prunning.
+I would like to thank Jost Kriege, Shlomo Yona, David Allen (for
+localizing and reporting and efficiency issue with ngram prunning),
+Andrija, and Roger Zhang, for bug reports and comments.
 
 I will be grateful for comments, bug reports, or just letting me know
 that you used the module.
@@ -733,4 +778,4 @@ Simon Cozen's Text::Ngram module in CPAN.
 The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
 
 =cut
-# $Id: Ngrams.pm,v 1.23 2004/07/29 17:40:14 vlado Exp $
+# $Id: Ngrams.pm,v 1.25 2004/11/01 17:00:27 vlado Exp $

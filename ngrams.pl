@@ -4,9 +4,9 @@ use strict;
 use vars qw($VERSION);
 #<? read_starfish_conf(); echo "\$VERSION = $ModuleVersion;"; !>
 #+
-$VERSION = 1.2;
+$VERSION = 1.3;
 #-
-# $Revision: 1.11 $
+# $Revision: 1.14 $
 
 use Text::Ngrams;
 use Getopt::Long;
@@ -95,6 +95,7 @@ This script produces n-grams tables of the input files to the standard
 ouput.
 
 Options:
+
 =over 4
 
 =item --normalize
@@ -151,7 +152,7 @@ Text::Ngrams module.
 
 =head1 COPYRIGHT
 
-Copyright 2003 Vlado Keselj F<http://www.cs.dal.ca/~vlado>
+Copyright 2003-2004 Vlado Keselj F<http://www.cs.dal.ca/~vlado>
 
 This module is provided "as is" without expressed or implied warranty.
 This is free software; you can redistribute it and/or modify it under
