@@ -2,3 +2,10 @@ Revision history for Perl extension Text::Ngrams.
 
 0.01  Wed Jun  4 20:52:49 ADT 2003
 	- initial version
+
+0.02  Fri Jun  6 16:00:00 ADT 2003
+	- fixed installation of ngrams.pl man page
+
+0.03  Mon Jun  9 07:05:00 ADT 2003
+	- fixed test cases 3, 5, and 7 (problems found thanks to
+	cpan-testers, Josts Smokehouse)

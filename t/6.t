@@ -5,4 +5,5 @@ require 't/auxfunctions.pl';
 
 my $out = `perl -Mblib ./ngrams.pl --n=2 --type=word t/5.in`;
 
-is(getfile('t/3.out'), $out);
+is(normalize(scalar(getfile('t/3.out'))),
+   normalize($out));

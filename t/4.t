@@ -11,4 +11,5 @@ $ng->process_text(
 	      brown fox ...
 ');
 
-is(getfile('t/4.out'), $ng->to_string);
+is(normalize(scalar(getfile('t/4.out'))),
+   normalize($ng->to_string));

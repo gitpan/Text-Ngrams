@@ -1,6 +1,6 @@
 # (c) 2003 Vlado Keselj www.cs.dal.ca/~vlado
 #
-# $Id: Ngrams.pm,v 1.5 2003/06/06 20:19:49 vlado Exp $
+# $Id: Ngrams.pm,v 1.7 2003/06/07 03:16:02 vlado Exp $
 
 package Text::Ngrams;
 
@@ -9,14 +9,14 @@ require Exporter;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS); # Exporter vars
 our @ISA = qw(Exporter);
 
-our %EXPORT_TAGS = ( 'all' => [ qw() ] );
+our %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(new);
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.5 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.7 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 
@@ -143,7 +143,7 @@ sub to_string {
 	else { @keys = sort(keys(%{$self->{table}[$n]})) }
 	
 	foreach my $ngram (@keys) {
-	    $ret .= &_encode_S($ngram) . "\t"
+	    $ret .= &encode_S($ngram) . "\t"
 		. $self->{table}[$n]{$ngram} . "\n";
 	}
 
@@ -154,7 +154,7 @@ sub to_string {
 }
 
 # http://www.cs.dal.ca/~vlado/srcperl/snip/decode_S
-sub _decode_S {
+sub decode_S ( $ ) {
     local $_ = shift;
     my $out;
 
@@ -180,7 +180,7 @@ sub _decode_S {
 }
 
 # http://www.cs.dal.ca/~vlado/srcperl/snip/encode_S
-sub _encode_S {
+sub encode_S( $ ) {
     local $_ = shift;
 
     s/=/=0/g;    # first hide a special character (=)
@@ -298,8 +298,15 @@ The output looks like this:
 
 N-grams are encoded using encode_S
 (F<www.cs.dal.ca/~vlado/srcperl/snip/encode_S>), so that they can
-always be recognized as \S+.  For example, for word n-grams, space is
-replaced by underscore (_):
+always be recognized as \S+.  This encoding does not change strings
+"too much", e.g., letters, digits, and most punctuation characters
+will remail unchanged, and space is replaced by underscore (_).
+However, all bytes (even with code greater than 127) are encoded in
+unambiguous and relatively compact way.  Two functions, encode_S and
+decode_S, are provided for translating arbitrary string into this form
+and vice versa.
+
+An example of word n-grams containing space:
 
   BEGIN OUTPUT BY Text::Ngrams version 0.01
 
@@ -411,31 +418,89 @@ $o->{tokenseparator} - string used to be inserted between tokens in n-gram
 
 $o->{skiprex} - regular expression for ignoring stuff between tokens.
 
-$o->{tokenrex} - regular expression for recognizing a token.
+$o->{tokenrex} - regular expression for recognizing a token.  If it is
+empty, it means chopping off one character.
 
 $o->{processtoken} - routine for token preprocessing.  Token is given and returned in $_.
+
+For example, the types character, byte, and word are defined in the
+foolowing way:
+
+  if ($params{type} eq 'character') {
+      $self->{tokenseparator} = '';
+      $self->{skiprex} = '';
+      $self->{tokenrex} = qr/([a-zA-Z]|[^a-zA-Z]+)/;
+      $self->{processtoken} =  sub { s/[^a-zA-Z]+/ /; $_ = uc $_ }
+  }
+  elsif ($params{type} eq 'byte') {
+      $self->{tokenseparator} = '';
+      $self->{skiprex} = '';
+      $self->{tokenrex} = '';
+      $self->{processtoken} = '';
+  }
+  elsif ($params{type} eq 'word') {
+      $self->{tokenseparator} = ' ';
+      $self->{skiprex} = qr/[^a-zA-Z0-9]+/;
+      $self->{tokenrex} = qr/([a-zA-Z]+|(\d+(\.\d+)?|\d*\.\d+)([eE][-+]?\d+)?)/;
+      $self->{processtoken} = sub { s/(\d+(\.\d+)?|\d*\.\d+)([eE][-+]?\d+)?/<NUMBER>/ }
+  }
 
 =back
 
 =head2 feed_tokens ( list of tokens )
 
+  $ng3->feed_tokens('a');
+
 This function manually supplies tokens.
 
 =head2 process_text ( list of strings )
+
+  $ng3->process_text('abcdefg1235678hijklmnop');
+  $ng->process_text('The brown quick fox, brown fox, brown fox ...');
 
 Process text, i.e., break each string into tokens and feed them.
 
 =head2 process_files ( file_names or file_handle_references)
 
+  $ng->process_files('somefile.txt');
+
 Process files, similarly to text.
 The files are processed line by line, so there should not be any
 multi-line tokens.
 
-=head2 to_string ( orderby => frequency )
+=head2 to_string ( orderby => 'frequency' )
+
+  print $ng3->to_string;
+  print $ng->to_string( orderby=>'frequency' );
 
 Produce string representation of the n-gram tables.
 If parameter 'orderyby=>frequency' is specified, each table is ordered
 by decreasing frequency.
+
+=head2 encode_S ( string )
+
+  $e = Text::Ngrams::encode_S( $s );
+
+or simply
+
+  $e = encode_S($s);
+
+if encode_S is imported.  Encodes arbitrary string into an \S* form.
+See F<http://www.cs.dal.ca/~vlado/srcperl/snip/encode_S> for detailed
+explanation.
+
+=head2 decode_S ( string )
+
+  $e = Text::Ngrams::decode_S( $s );
+
+or simply
+
+  $e = decode_S($s);
+
+if decode_S is imported.  Decodes a string encoded in the \S* form.
+See F<http://www.cs.dal.ca/~vlado/srcperl/snip/encode_S> for detailed
+explanation.
+
 
 =head1 HISTORY AND RELATED WORK
 
@@ -451,8 +516,8 @@ This is a package that includes a script for word n-grams.
 
 =item Text::Ngram Perl Package by Simon Cozens
 
-This is a similar package for character n-grams.  As an
-XS-implementation it is supposed to be very efficient.
+This is a package similar to Text::Ngrams for character n-grams.
+As an XS implementation it is supposed to be very efficient.
 
 =item Perl script ngram.pl by Jarkko Hietaniemi
 
@@ -464,7 +529,7 @@ A n-gram language modeling package written in C++.
 
 =back
 
-=head1 BUGS AND LIMITATIONS
+=head1 LIMITATIONS
 
 If a user customizes a type, it is possible that a resulting n-gram will be ambiguous.
 In this way, to different n-grams may be counted as one.  With predefined types of n-grams,
@@ -472,6 +537,12 @@ this should not happen.
 
 For example, if a user chooses that a token can contain a space, and uses space as an n-gram
 separator, then a trigram like this "x x x x" is ambiguous.
+
+Method process_file does not handle multi-line tokens by default.
+There are various ways around this.  Probably the best one is to read
+text as much text as we want and then to use process_text, which does
+handle multi-line tokens.  Otherwise, it does not seem to be worth
+changing the code.
 
 =head1 AUTHOR
 

@@ -18,4 +18,10 @@ sub putfile($@) {
     close(F);
 }
 
+sub normalize {
+    my $r = shift;
+    $r =~ s/(BEGIN OUTPUT BY Text::Ngrams version )[\d.]+/$1/;
+    return $r;
+}
+
 1;

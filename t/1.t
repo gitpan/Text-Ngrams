@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use Test::More tests => 2;
+use Test::More tests => 4;
 use_ok("Text::Ngrams");
 require 't/auxfunctions.pl';
 
@@ -14,4 +14,11 @@ $ng3->feed_tokens('f');
 $ng3->feed_tokens('g');
 $ng3->feed_tokens('h');
 
-is(getfile('t/1.out'), $ng3->to_string, 'test 1');
+is(normalize(scalar(getfile('t/1.out'))),
+   normalize($ng3->to_string));
+
+is(Text::Ngrams::encode_S("abc\n\t\xF6lado"),
+   'abc\\n\\t^vlado');
+
+is(Text::Ngrams::decode_S('abc\\n\\t^vlado'),
+   "abc\n\t\xF6lado");
