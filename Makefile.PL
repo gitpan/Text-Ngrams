@@ -24,7 +24,9 @@ WriteMakefile (
      AUTHOR     => 'Vlado Keselj www.cs.dal.ca/~vkeselj') : 
     ()
     ),
-    EXE_FILES => [ 'ngrams.pl' ]
+    EXE_FILES => [ 'ngrams.pl' ],
+    MAN3PODS => { 'Ngrams.pm' => 'blib/man3/Text::Ngrams.3' },
+    MAN1PODS => { 'ngrams.pl' => 'blib/man1/ngrams.pl.1' }
    );
 
 open(M, ">>Makefile") or die;

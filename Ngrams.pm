@@ -1,6 +1,6 @@
 # (c) 2003 Vlado Keselj www.cs.dal.ca/~vlado
 #
-# $Id: Ngrams.pm,v 1.4 2003/06/06 19:10:16 vlado Exp $
+# $Id: Ngrams.pm,v 1.5 2003/06/06 20:19:49 vlado Exp $
 
 package Text::Ngrams;
 
@@ -12,11 +12,11 @@ our @ISA = qw(Exporter);
 our %EXPORT_TAGS = ( 'all' => [ qw() ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(new);
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.4 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.5 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 
