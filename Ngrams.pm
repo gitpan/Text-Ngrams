@@ -1,4 +1,4 @@
-# (c) 2003 Vlado Keselj www.cs.dal.ca/~vlado
+# (c) 2003-2004 Vlado Keselj www.cs.dal.ca/~vlado
 
 package Text::Ngrams;
 
@@ -11,11 +11,11 @@ our @ISA = qw(Exporter);
 our %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(new);
-our $VERSION = '1.0';
+our $VERSION = '1.1';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.18 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.19 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 
@@ -293,7 +293,7 @@ For default character n-gram analysis of string:
 
   use Text::Ngrams;
   my $ng3 = Text::Ngrams->new;
-  ng3->process_text('abcdefg1235678hijklmnop');
+  $ng3->process_text('abcdefg1235678hijklmnop');
   print ng3->to_string;
 
 One can also feed tokens manually:
@@ -341,9 +341,9 @@ C<ngrams.pl> provided with the package.
 
 =head1 OUTPUT FORMAT
 
-The output looks like this:
+The output looks like this (version number may be different):
 
-  BEGIN OUTPUT BY Text::Ngrams version 0.01
+  BEGIN OUTPUT BY Text::Ngrams version 1.1
 
   1-GRAMS (total count: 8)
   ------------------------
@@ -389,7 +389,7 @@ and vice versa.
 
 An example of word n-grams containing space:
 
-  BEGIN OUTPUT BY Text::Ngrams version 0.01
+  BEGIN OUTPUT BY Text::Ngrams version 1.1
 
   1-GRAMS (total count: 8)
   ------------------------
@@ -410,7 +410,7 @@ An example of word n-grams containing space:
 
 Or, in case of byte type of processing:
 
-  BEGIN OUTPUT BY Text::Ngrams version 0.01
+  BEGIN OUTPUT BY Text::Ngrams version 1.1
 
   1-GRAMS (total count: 55)
   -------------------------
@@ -697,14 +697,15 @@ does handle multi-line tokens.
 
 =head1 THANKS
 
-I'd like to thank Jost Kriege for bug report.
+I'd like to thank Jost Kriege and Shlomo Yona for bug reports,
+comments, and/or encouragement.
 
 I will be grateful for comments, bug reports, or just letting me know
 that you used the module.
 
 =head1 AUTHOR
 
-Copyright 2003 Vlado Keselj www.cs.dal.ca/~vlado
+Copyright 2003-2004 Vlado Keselj www.cs.dal.ca/~vlado
 
 This module is provided "as is" without expressed or implied warranty.
 This is free software; you can redistribute it and/or modify it under
@@ -722,4 +723,4 @@ Simon Cozen's Text::Ngram module in CPAN.
 The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
 
 =cut
-# $Id: Ngrams.pm,v 1.18 2003/12/18 17:34:54 vlado Exp $
+# $Id: Ngrams.pm,v 1.19 2004/01/19 12:29:55 vlado Exp $

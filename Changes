@@ -21,3 +21,6 @@ Revision history for Perl extension Text::Ngrams.
 1.0   Thu Dec 18 13:09:45 AST 2003
 	- added parameter 'normalize' to ngrams.pl and to_string
 	  method in Ngrams.pm
+
+1.1
+	- corrected typo submitted by Shlomo Yona
