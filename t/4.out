@@ -1,0 +1,94 @@
+BEGIN OUTPUT BY Text::Ngrams version 0.01
+
+1-GRAMS (total count: 55)
+-------------------------
+\t	3
+\n	3
+_	12
+,	2
+.	3
+T	1
+b	3
+c	1
+e	1
+f	3
+h	1
+i	1
+k	1
+n	3
+o	6
+q	1
+r	3
+u	1
+w	3
+x	3
+
+2-GRAMS (total count: 54)
+-------------------------
+\t_	1
+\tT	1
+\tb	1
+\n\t	2
+__	5
+_.	1
+_b	2
+_f	3
+_q	1
+,\n	2
+.\n	1
+..	2
+Th	1
+br	3
+ck	1
+e_	1
+fo	3
+he	1
+ic	1
+k_	1
+n_	3
+ow	3
+ox	3
+qu	1
+ro	3
+ui	1
+wn	3
+x_	1
+x,	2
+
+3-GRAMS (total count: 53)
+-------------------------
+\t__	1
+\tTh	1
+\tbr	1
+\n\t_	1
+\n\tb	1
+___	4
+__b	1
+_..	1
+_br	2
+_fo	3
+_qu	1
+,\n\t	2
+..\n	1
+...	1
+The	1
+bro	3
+ck_	1
+e_b	1
+fox	3
+he_	1
+ick	1
+k_f	1
+n_f	2
+n_q	1
+own	3
+ox_	1
+ox,	2
+qui	1
+row	3
+uic	1
+wn_	3
+x_.	1
+x,\n	2
+
+END OUTPUT BY Text::Ngrams
