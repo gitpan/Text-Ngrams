@@ -5,10 +5,12 @@ use_ok("Text::Ngrams");
 require 't/auxfunctions.pl';
 
 my $ng = Text::Ngrams->new(windowsize=>2, type=>'word');
-$ng->process_files('t/5.in');
+$ng->process_files('t/05.in');
 
-my $producedout = normalize($ng->to_string( orderby=>'frequency' ));
-my $oldout      = normalize(scalar(getfile('t/7.out')));
+#putfile('t/9.out', $ng->to_string( orderby=>'frequency', onlyfirst=>2 ));
+
+my $producedout = normalize($ng->to_string( orderby=>'frequency', onlyfirst=>2 ));
+my $oldout      = normalize(scalar(getfile('t/09.out')));
 
 # ordering may vary, so let us normalize it further
 $producedout = &normalize1( $producedout );

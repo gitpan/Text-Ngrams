@@ -9,9 +9,9 @@ WriteMakefile (
    'VERSION_FROM' => $name, # finds $VERSION
    'dist' => { COMPRESS=>"gzip",
                SUFFIX=>"gz",
-               PREOP=>('starfish README; '.
-                       "cp -f README $dir-\$(VERSION); "
-                      ),
+               #PREOP=>('starfish -replace -o=$dir-\$(VERSION)/README README.sfish'
+               #        #."cp -f README $dir-\$(VERSION); "
+               #       ),
              },
    'clean' => {FILES => "tmp* testfiles/tmp1 Text *~ Makefile.old"},
    'PREREQ_PM' => {

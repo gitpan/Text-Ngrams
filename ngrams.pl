@@ -2,7 +2,11 @@
 
 use strict;
 use vars qw($VERSION);
-$VERSION = sprintf "%d.%d", q$Revision: 1.7 $ =~ /(\d+)/g;
+#<? read_starfish_conf(); echo "\$VERSION = $ModuleVersion;"; !>
+#+
+$VERSION = 1.0;
+#-
+# $Revision: 1.8 $
 
 use Text::Ngrams;
 use Getopt::Long;
@@ -17,6 +21,8 @@ Usage: $0 [options] [files]
 Compute the ngram frequencies and produce tables to the stdout.
 Options:
 --n=N		The default is 3-grams.
+--normalize     Produce normalized frequencies (divided by the total
+                number of n-grams of the same size)
 --type=T        The default is character.  For more types see
                 Text::Ngrams module.
 --limit=N       Limit the number of distinct n-grams.
@@ -31,9 +37,12 @@ EOF
     exit(1);
 }
 
+my ($opt_normalize);
+
 help()
     unless
       GetOptions('n=i'        => \$n,
+		 'normalize'  => \$opt_normalize,
 		 'type=s'     => \$type,
 		 'limit=i'    => \$limit,
 		 'help'       => \$help,
@@ -63,6 +72,7 @@ else { $ng->process_files(\*STDIN) }
 %params = ( 'out' => \*STDOUT );
 if (defined($orderby) and $orderby) { $params{'orderby'} = $orderby }
 if (defined($onlyfirst) and $onlyfirst>0) { $params{'onlyfirst'} = $onlyfirst }
+if ($opt_normalize) { $params{'normalize'} = $opt_normalize }
 
 print $ng->to_string( %params );
 
@@ -75,8 +85,8 @@ ngrams - Compute the ngram frequencies and produce tables to the stdout.
 
 =head1 SYNOPIS
 
-  ngram [--version] [--help] [--n=3] [--type=TYPE] [--orderby=ORD]
-        [--onlyfirst=N] [input files]
+  ngram [--version] [--help] [--n=3] [--normalize] [--type=TYPE]
+        [--orderby=ORD] [--onlyfirst=N] [input files]
 
 =head1 DESCRIPTION
 
@@ -86,7 +96,12 @@ ouput.
 Options:
 =over 4
 
-=item --=NUMBER
+=item --normalize
+
+Prints normalized n-gram frequencies; i.e., the n-gram counts divided
+by the total number of n-grams of the same size.
+
+=item --onlyfirst=NUMBER
 
 Prints only the first NUMBER n-grams for each n.  See Text::Ngrams module.
 

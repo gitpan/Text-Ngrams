@@ -4,13 +4,13 @@ use Test::More tests => 2;
 use_ok("Text::Ngrams");
 require 't/auxfunctions.pl';
 
-my $ng = Text::Ngrams->new(windowsize=>2, type=>'word');
-$ng->process_files('t/5.in');
+my $ng = Text::Ngrams->new(windowsize=>2, type=>'word', limit=>4);
+$ng->process_files('t/08.in');
 
-#putfile('t/9.out', $ng->to_string( orderby=>'frequency', onlyfirst=>2 ));
+#putfile('t/8.out', $ng->to_string( orderby=>'frequency' ));
 
-my $producedout = normalize($ng->to_string( orderby=>'frequency', onlyfirst=>2 ));
-my $oldout      = normalize(scalar(getfile('t/9.out')));
+my $producedout = normalize($ng->to_string( orderby=>'frequency' ));
+my $oldout      = normalize(scalar(getfile('t/08.out')));
 
 # ordering may vary, so let us normalize it further
 $producedout = &normalize1( $producedout );

@@ -4,17 +4,18 @@ package Text::Ngrams;
 
 use strict;
 require Exporter;
+use Carp;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS); # Exporter vars
 our @ISA = qw(Exporter);
 
 our %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(new);
-our $VERSION = '0.05';
+our $VERSION = '1.0';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.15 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.18 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 
@@ -30,8 +31,8 @@ sub new {
 
   $self->{windowsize} = exists($params{windowsize}) ?
       $params{windowsize} : 3;
-
   die "nonpositive window size: $self->{windowsize}" unless $self->{windowsize} > 0;
+  delete($params{windowsize});
 
   if (! exists($params{type}) or $params{type} eq 'character') {
       $self->{tokenseparator} = '';
@@ -52,6 +53,7 @@ sub new {
       $self->{processtoken} = sub { s/(\d+(\.\d+)?|\d*\.\d+)([eE][-+]?\d+)?/<NUMBER>/ }
   }
   else { die "unknown type: $params{type}" }
+  delete($params{type});
 
   $self->{'table'} = [ ];
   $self->{'total'} = [ ];
@@ -68,6 +70,9 @@ sub new {
       die "limit=$params{'limit'}" if $params{'limit'} < 1;
       $self->{'limit'} = $params{'limit'};
   }
+  delete($params{'limit'});
+
+  die "unknown parameters:".join(' ', %params) if %params;
 
   bless($self, $package);
   return $self;
@@ -166,13 +171,19 @@ sub _reduce_to_limit {
 sub to_string {
     my $self = shift;
     my (%params) = @_;
+   
     my $onlyfirst = exists($params{'onlyfirst'}) ?
 	$params{'onlyfirst'} : '';
+    delete $params{'onlyfirst'};
 
     my $out =  exists($params{'out'}) ? $params{'out'} : '';
+    delete $params{'out'};
     my $outh = $out;
     if ($out and (not ref($out))) 
     { open($outh, ">$out") or die "cannot open $out:$!" }
+
+    my $opt_normalize = $params{'normalize'};
+    delete $params{'normalize'};
 
     my $ret = "BEGIN OUTPUT BY Text::Ngrams version $VERSION\n\n";
 
@@ -180,6 +191,7 @@ sub to_string {
 	{ my $tmp = "$n-GRAMS (total count: $self->{total}[$n])";
 	  $ret .= "$tmp\n" . ('-' x length($tmp)) . "\n";
         }
+	my $total = $self->{total}[$n];
 
 	my @keys;
 	if (!exists($params{'orderby'}) or $params{'orderby'} eq 'ngram')
@@ -198,8 +210,9 @@ sub to_string {
 	@keys = splice(@keys,0,$onlyfirst) if $onlyfirst;
 
 	foreach my $ngram (@keys) {
-	    $ret .= &encode_S($ngram) . "\t"
-		. $self->{table}[$n]{$ngram} . "\n";
+	    my $count = $self->{table}[$n]{$ngram};
+	    $ret .= &encode_S($ngram) . "\t" .
+		($opt_normalize ? ($count / $total ) : $count) ."\n";
 	    if ($out) { print $outh $ret; $ret = '' }
 
 	}
@@ -324,7 +337,7 @@ The output format is meant to be pretty much human-readable, while also
 loadable by the module.
 
 The module can be used from the command line through the script
-L<ngrams.pl> provided with the package.
+C<ngrams.pl> provided with the package.
 
 =head1 OUTPUT FORMAT
 
@@ -547,18 +560,30 @@ Process files, similarly to text.
 The files are processed line by line, so there should not be any
 multi-line tokens.
 
-=head2 to_string ( orderby => 'ngram|frequency|none', onlyfirst => NUMBER, out => filename|handle )
+=head2 to_string ( orderby => 'ngram|frequency|none', onlyfirst => NUMBER, out => filename|handle, normalize => 1 )
 
   print $ng3->to_string;
   print $ng->to_string( orderby=>'frequency' );
   print $ng->to_string( orderby=>'frequency', onlyfirst=>10000 );
+  print $ng->to_string( orderby=>'frequency', onlyfirst=>10000, normalize=>1 );
 
 Produce string representation of the n-gram tables.
-The parameter orderby specifies the order of n-grams.  The default
+
+Parameters:
+
+=over 4
+
+=item C<orderby>
+
+The parameter C<orderby> specifies the order of n-grams.  The default
 value is 'ngram'.
+
+=item C<onlyfirst>
 
 The parameter C<onlyfirst> causes printing only this many first n-grams
 for each n.  It is incompatible with C<orderby=>'none'>.
+
+=item C<out>
 
 The method C<to_string> produces n-gram tables.  However, if those
 tables are large and we know that we will write them to a file
@@ -566,6 +591,15 @@ right after processing, it may save memory and time to provide the
 parameter C<out>, which is a filename or reference to a file handle.
 (Experiments on my machine do not show significant improvement nor degradation.)
 Filename will be opened and closed, while the file handle will not.
+
+=item C<normalize>
+
+This is a boolean parameter.  By default, it is false (''), in which
+case n-gram counts are produced.  If it is true (e.g., 1), the output
+will contain normalized frequencies; i.e., n-gram counts divided by
+the total number of n-grams of the same size.
+
+=back
 
 =head2 encode_S ( string )
 
@@ -627,7 +661,7 @@ processed faster than a file in Chinese, due to a larger number of
 distinct n-grams.
 
 The following tests are preformed on a Pentium-III 550MHz, 512MB
-memory, Linux Red Hat 6 platform.  (See L<ngrams.pl> - the script is
+memory, Linux Red Hat 6 platform.  (See C<ngrams.pl> - the script is
 included in this package.)
 
   ngrams.pl --n=10 --type=byte 1Mfile
@@ -688,4 +722,4 @@ Simon Cozen's Text::Ngram module in CPAN.
 The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
 
 =cut
-# $Id: Ngrams.pm,v 1.15 2003/06/12 10:04:42 vlado Exp $
+# $Id: Ngrams.pm,v 1.18 2003/12/18 17:34:54 vlado Exp $
