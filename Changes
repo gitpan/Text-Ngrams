@@ -14,3 +14,6 @@ Revision history for Perl extension Text::Ngrams.
 	- added parameter 'limit' to new
         - added non-ordered print
         - added paramter 'onlyfirst' to print
+
+0.05  Wed Sep  3 13:00:43 ADT 2003
+      - fixed README

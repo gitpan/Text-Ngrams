@@ -1,12 +1,16 @@
-AI/NaiveBayes1 version 0.01
-===========================
+<? read_starfish_conf();echo "Text::Ngrams version $ModuleVersion\n".'='x26!>
+#+
+Text::Ngrams version 0.05
+==========================
+#-
 
-This is an implementation of basic the Naive Bayes classification
-algorithm.  Documentation is a part of the file NaiveBayes1.pm in the
-pod format.  To convert it into manual page format, type something
-like the following:
 
-	  pod2html NaiveBayes1.pm
+This is a module for flexible N-gram analysis of a text.  It supports
+character n-grams, word n-grams, and more.  Documentation is a part of
+the file Ngrams.pm in the pod format.  To convert it into manual page
+format, type something like the following:
+
+	  pod2html Ngrams.pm
 
 INSTALLATION
 
