@@ -6,16 +6,15 @@ use strict;
 require Exporter;
 use Carp;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-our @ISA = qw(Exporter);
-
-our %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-our @EXPORT = qw(new);
-our $VERSION = '1.6';
+@ISA = qw(Exporter);
+%EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
+@EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
+@EXPORT = qw(new);
+$VERSION = '1.7';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.31 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.33 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 use vars qw();			# non-exported package globals go here
@@ -348,7 +347,7 @@ For default character n-gram analysis of string:
   use Text::Ngrams;
   my $ng3 = Text::Ngrams->new;
   $ng3->process_text('abcdefg1235678hijklmnop');
-  print ng3->to_string;
+  print $ng3->to_string;
 
 One can also feed tokens manually:
 
@@ -774,8 +773,8 @@ does handle multi-line tokens.
 
 I would like to thank cpan-testers, Jost Kriege, Shlomo Yona, David
 Allen (for localizing and reporting and efficiency issue with ngram
-prunning), Andrija, Roger Zhang, and Jeremy Moses for bug reports and
-comments.
+prunning), Andrija, Roger Zhang, Jeremy Moses, and Kevin J. Ziese for
+bug reports and comments.
 
 I will be grateful for comments, bug reports, or just letting me know
 that you used the module.
@@ -800,4 +799,4 @@ Simon Cozen's Text::Ngram module in CPAN.
 The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
 
 =cut
-# $Id: Ngrams.pm,v 1.31 2004/12/03 03:01:30 vlado Exp $
+# $Id: Ngrams.pm,v 1.33 2004/12/08 13:15:00 vlado Exp $

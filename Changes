@@ -46,3 +46,7 @@ Revision history for Perl extension Text::Ngrams.
 
 1.6   Thu Dec  2 23:00:42 AST 2004
 	- added utf8 type n-grams
+
+1.7   Wed Dec  8 11:01:07 AST 2004
+	- fixed a documentation typo (thanks to Kevin J. Ziese)
+	- solving "our deprecated" warning

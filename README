@@ -1,6 +1,6 @@
 <? read_starfish_conf();echo "Text::Ngrams version $ModuleVersion\n".'='x24!>
 #+
-Text::Ngrams version 1.6
+Text::Ngrams version 1.7
 ========================
 #-
 
