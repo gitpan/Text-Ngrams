@@ -44,3 +44,5 @@ Revision history for Perl extension Text::Ngrams.
 1.5   Wed Nov  3 14:04:30 AST 2004
         - minor testing bug (rounding error)
 
+1.6   Thu Dec  2 23:00:42 AST 2004
+	- added utf8 type n-grams

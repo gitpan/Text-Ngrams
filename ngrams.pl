@@ -4,9 +4,9 @@ use strict;
 use vars qw($VERSION);
 #<? read_starfish_conf(); echo "\$VERSION = $ModuleVersion;"; !>
 #+
-$VERSION = 1.5;
+$VERSION = 1.6;
 #-
-# $Revision: 1.15 $
+# $Revision: 1.18 $
 
 use Text::Ngrams;
 use Getopt::Long;
@@ -128,7 +128,7 @@ N-gram size, produces 3-grams by default.
 
 The n-gram order.  See Text::Ngrams module.
 
-=item --type=character|byte|word
+=item --type=character|byte|word|utf8
 
 Type of n-grams produces. See Text::Ngrams module.
 
@@ -144,7 +144,7 @@ Text::Statistics
 =head1 README
 
 N-gram analysis for various kinds of n-grams (character, words, bytes,
-and user-defined). Based on Text::Ngrams module.
+utf8, and user-defined). Based on Text::Ngrams module.
 
 =head1 SEE ALSO
 

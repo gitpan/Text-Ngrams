@@ -5,22 +5,20 @@ package Text::Ngrams;
 use strict;
 require Exporter;
 use Carp;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS); # Exporter vars
+use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 our @ISA = qw(Exporter);
 
 our %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(new);
-our $VERSION = '1.5';
+our $VERSION = '1.6';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.28 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.31 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
-
-# non-exported package globals go here
-use vars qw();
+use vars qw();			# non-exported package globals go here
 
 sub new {
   my $package = shift;
@@ -40,6 +38,15 @@ sub new {
       $self->{tokenrex} = qr/([a-zA-Z]|[^a-zA-Z]+)/;
       $self->{processtoken} =  sub { s/[^a-zA-Z]+/ /; $_ = uc $_ };
       $self->{allow_iproc} = 1;
+  }
+  elsif ($params{type} eq 'utf8') {
+      $self->{tokenseparator} = '';
+      $self->{skiprex} = '';
+      $self->{tokenrex} = qr/([\xF0-\xF4][\x80-\xBF][\x80-\xBF][\x80-\xBF]
+                             |[\xE0-\xEF][\x80-\xBF][\x80-\xBF]
+                             |[\xC2-\xDF][\x80-\xBF]
+                             |[\x00-\xFF])/x;
+      $self->{processtoken} = '';
   }
   elsif ($params{type} eq 'byte') {
       $self->{tokenseparator} = '';
@@ -364,6 +371,7 @@ or different types of n-grams, e.g.:
 
   my $ng = Text::Ngrams->new( type => byte );
   my $ng = Text::Ngrams->new( type => word );
+  my $ng = Text::Ngrams->new( type => utf8 );
 
 To process a list of files:
 
@@ -494,7 +502,7 @@ Or, in case of byte type of processing:
 
 =head1 METHODS
 
-=head2 new ( windowsize => POS_INTEGER, type => character|byte|word, limit => POS_INTEGER )
+=head2 new ( windowsize => POS_INTEGER, type => character|byte|word|utf8, limit => POS_INTEGER )
 
   my $ng = Text::Ngrams->new;
   my $ng = Text::Ngrams->new( windowsize=>10 );
@@ -539,6 +547,10 @@ by a space, letters are turned uppercase.
 Raw character n-grams:
 Don't ignore any bytes and don't pre-process them.
 
+=item utf8
+
+UTF8 characters: Variable length encoding.
+
 =item word
 
 Default word n-grams:
@@ -564,7 +576,7 @@ empty, it means chopping off one character.
 
 $o->{processtoken} - routine for token preprocessing.  Token is given and returned in $_.
 
-$o->{allow_iproc} - boolean, if set to true (1) allowes for incomplete
+$o->{allow_iproc} - boolean, if set to true (1) allows for incomplete
     tokens to be preprocessed and put back (efficiency motivation)
 
 For example, the types character, byte, and word are defined in the
@@ -581,6 +593,15 @@ foolowing way:
       $self->{tokenseparator} = '';
       $self->{skiprex} = '';
       $self->{tokenrex} = '';
+      $self->{processtoken} = '';
+  }
+  elsif ($params{type} eq 'utf8') {
+      $self->{tokenseparator} = '';
+      $self->{skiprex} = '';
+      $self->{tokenrex} = qr/([\xF0-\xF4][\x80-\xBF][\x80-\xBF][\x80-\xBF]
+                             |[\xE0-\xEF][\x80-\xBF][\x80-\xBF]
+                             |[\xC2-\xDF][\x80-\xBF]
+                             |[\x00-\xFF])/x;
       $self->{processtoken} = '';
   }
   elsif ($params{type} eq 'word') {
@@ -753,7 +774,8 @@ does handle multi-line tokens.
 
 I would like to thank cpan-testers, Jost Kriege, Shlomo Yona, David
 Allen (for localizing and reporting and efficiency issue with ngram
-prunning), Andrija, and Roger Zhang, for bug reports and comments.
+prunning), Andrija, Roger Zhang, and Jeremy Moses for bug reports and
+comments.
 
 I will be grateful for comments, bug reports, or just letting me know
 that you used the module.
@@ -778,4 +800,4 @@ Simon Cozen's Text::Ngram module in CPAN.
 The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
 
 =cut
-# $Id: Ngrams.pm,v 1.28 2004/11/03 12:52:32 vlado Exp $
+# $Id: Ngrams.pm,v 1.31 2004/12/03 03:01:30 vlado Exp $
