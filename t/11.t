@@ -9,4 +9,5 @@ my $out = normalize(scalar(`$com`));
 
 #putfile('t/11.out', $out);
 
-is(normalize(scalar(getfile('t/11.out'))), $out);
+is(normalize(scalar(getfile('t/11.out'))),
+   normalize($out));

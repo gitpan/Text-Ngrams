@@ -7,7 +7,7 @@ require 't/auxfunctions.pl';
 my $ng = Text::Ngrams->new(windowsize=>2, type=>'word', limit=>4);
 $ng->process_files('t/08.in');
 
-putfile('t/tmp-08.out', $ng->to_string( orderby=>'frequency' ));
+#putfile('t/tmp-08.out', $ng->to_string( orderby=>'frequency' ));
 
 my $producedout = normalize($ng->to_string( orderby=>'frequency' ));
 my $oldout      = normalize(scalar(getfile('t/08.out')));

@@ -11,11 +11,11 @@ our @ISA = qw(Exporter);
 our %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(new);
-our $VERSION = '1.3';
+our $VERSION = '1.4';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.25 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.27 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 
@@ -289,11 +289,11 @@ sub decode_S ( $ ) {
             $out .= $tmp;
         }
         elsif (/^\^_/) { $_ = $'; $out .= "\240" }
-        elsif (/^\^(\S)/) { $_ = $'; $out .= pack('c',ord($1)+128); }
+        elsif (/^\^(\S)/) { $_ = $'; $out .= pack('C',ord($1)+128); }
         elsif (/^\`(\S)/) {
             $_ = $'; my $tmp = $1;
             $tmp =~ tr/0-5Aabtnvfroil6-9NSTcEseFGRUd/\x00-\x1F\x7F/;
-            $out .= pack('c', ord($tmp)+128);
+            $out .= pack('C', ord($tmp)+128);
         }
         elsif (/^_+/) { $_ = $'; my $tmp = $&; $tmp =~ tr/_/ /; $out .= $tmp; }
         elsif (/^[^\\^\`\s_]+/) { $_ = $'; $out .= $&; }
@@ -751,9 +751,9 @@ does handle multi-line tokens.
 
 =head1 THANKS
 
-I would like to thank Jost Kriege, Shlomo Yona, David Allen (for
-localizing and reporting and efficiency issue with ngram prunning),
-Andrija, and Roger Zhang, for bug reports and comments.
+I would like to thank cpan-testers, Jost Kriege, Shlomo Yona, David
+Allen (for localizing and reporting and efficiency issue with ngram
+prunning), Andrija, and Roger Zhang, for bug reports and comments.
 
 I will be grateful for comments, bug reports, or just letting me know
 that you used the module.
@@ -778,4 +778,4 @@ Simon Cozen's Text::Ngram module in CPAN.
 The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
 
 =cut
-# $Id: Ngrams.pm,v 1.25 2004/11/01 17:00:27 vlado Exp $
+# $Id: Ngrams.pm,v 1.27 2004/11/03 12:45:56 vlado Exp $
