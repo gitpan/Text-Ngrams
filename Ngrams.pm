@@ -11,11 +11,11 @@ our @ISA = qw(Exporter);
 our %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(new);
-our $VERSION = '1.4';
+our $VERSION = '1.5';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.27 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.28 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 
@@ -778,4 +778,4 @@ Simon Cozen's Text::Ngram module in CPAN.
 The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
 
 =cut
-# $Id: Ngrams.pm,v 1.27 2004/11/03 12:45:56 vlado Exp $
+# $Id: Ngrams.pm,v 1.28 2004/11/03 12:52:32 vlado Exp $

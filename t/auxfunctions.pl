@@ -21,6 +21,7 @@ sub putfile($@) {
 sub normalize {
     my $r = shift;
     $r =~ s/(BEGIN OUTPUT BY Text::Ngrams version )[\d.]+/$1/;
+    $r =~ s/(\s\d\.\d\d\d\d\d\d\d\d\d\d\d\d\d\d)\d*/$1/g;
     return $r;
 }
 
