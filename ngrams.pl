@@ -4,9 +4,9 @@ use strict;
 use vars qw($VERSION);
 #<? read_starfish_conf(); echo "\$VERSION = $ModuleVersion;"; !>
 #+
-$VERSION = 1.1;
+$VERSION = 1.2;
 #-
-# $Revision: 1.9 $
+# $Revision: 1.11 $
 
 use Text::Ngrams;
 use Getopt::Long;
@@ -26,6 +26,7 @@ Options:
 --type=T        The default is character.  For more types see
                 Text::Ngrams module.
 --limit=N       Limit the number of distinct n-grams.
+                BEWARE: Final tables may be inaccurate if limit is used.
 --help		Show this help.
 --version	Show version.
 --orderby=ARG   ARG can be: frequency or ngram.

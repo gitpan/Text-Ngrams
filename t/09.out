@@ -1,13 +1,17 @@
-BEGIN OUTPUT BY Text::Ngrams version 0.04
+BEGIN OUTPUT BY Text::Ngrams version 1.2
 
 1-GRAMS (total count: 8)
+FIRST N-GRAM: The
+ LAST N-GRAM: fox
 ------------------------
 fox	3
 brown	3
 
 2-GRAMS (total count: 7)
+FIRST N-GRAM: The_brown
+ LAST N-GRAM: brown_fox
 ------------------------
-fox_brown	2
 brown_fox	2
+fox_brown	2
 
 END OUTPUT BY Text::Ngrams

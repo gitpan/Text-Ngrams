@@ -22,5 +22,11 @@ Revision history for Perl extension Text::Ngrams.
 	- added parameter 'normalize' to ngrams.pl and to_string
 	  method in Ngrams.pm
 
-1.1
+1.1   Sat May 29 16:15:34 ADT 2004
 	- corrected typo submitted by Shlomo Yona
+
+1.2   Thu Jul 29 15:05:28 ADT 2004
+	- documentation improvement
+	- introduced first and last n-gram in the output
+	- made _reduce_to_limit more efficient (--limit parameter)
+

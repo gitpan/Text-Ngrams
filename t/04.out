@@ -1,6 +1,8 @@
-BEGIN OUTPUT BY Text::Ngrams version 0.02
+BEGIN OUTPUT BY Text::Ngrams version 
 
 1-GRAMS (total count: 55)
+FIRST N-GRAM: \t
+ LAST N-GRAM: \n
 -------------------------
 \t	3
 \n	3
@@ -24,6 +26,8 @@ w	3
 x	3
 
 2-GRAMS (total count: 54)
+FIRST N-GRAM: \tT
+ LAST N-GRAM: .\n
 -------------------------
 \t_	1
 \tT	1
@@ -56,6 +60,8 @@ x_	1
 x,	2
 
 3-GRAMS (total count: 53)
+FIRST N-GRAM: \tTh
+ LAST N-GRAM: ..\n
 -------------------------
 \t__	1
 \tTh	1

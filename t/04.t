@@ -11,5 +11,6 @@ $ng->process_text(
 	      brown fox ...
 ');
 
+#putfile('t/04.out', normalize($ng->to_string('orderby' => 'ngram' )));
 is(normalize(scalar(getfile('t/04.out'))),
    normalize($ng->to_string('orderby' => 'ngram' )));

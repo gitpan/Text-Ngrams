@@ -14,8 +14,9 @@ $ng3->feed_tokens('f');
 $ng3->feed_tokens('g');
 $ng3->feed_tokens('h');
 
-is(normalize(scalar(getfile('t/01.out'))),
-   normalize($ng3->to_string( 'orderby' => 'ngram' )));
+#putfile('t/01.out', $ng3->to_string( 'orderby' => 'ngram' ));
+is (normalize($ng3->to_string( 'orderby' => 'ngram' )),
+    normalize(scalar(getfile('t/01.out'))));
 
 is($ng3->{'total_distinct_count'}, 21);
 

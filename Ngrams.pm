@@ -11,11 +11,11 @@ our @ISA = qw(Exporter);
 our %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(new);
-our $VERSION = '1.1';
+our $VERSION = '1.2';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.19 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.23 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 
@@ -63,6 +63,7 @@ sub new {
   foreach my $i ( 1 .. $self->{windowsize} ) {
       $self->{table}[$i] = { };
       $self->{total}[$i] = 0;
+      $self->{firstngram}[$i] = '';
       $self->{lastngram}[$i] = '';
   }
 
@@ -93,6 +94,8 @@ sub feed_tokens {
 	    { $self->{'total_distinct_count'} += 1 }
 
 	    $self->{'total'}[$n] += 1;
+	    if ($self->{'firstngram'}[$n] eq '')
+	    { $self->{'firstngram'}[$n] = $self->{lastngram}[$n] }
 	}
     }
     if (exists($self->{'limit'}) and
@@ -149,24 +152,27 @@ sub _reduce_to_limit {
 	$self->{'limit'} > 0;
 
     while ($self->{'total_distinct_count'} > $self->{'limit'}) {
-	for (my $prunefrequency=1;; ++$prunefrequency) {
+	my $nextprunefrequency = 0;
+	for (my $prunefrequency=1;; $prunefrequency = $nextprunefrequency) {
+	    $nextprunefrequency = $self->{'total'}[1];
+
 	    foreach my $n (1 .. $self->{'windowsize'}) {
 
 		my @keys = keys(%{$self->{table}[$n]});
 		foreach my $ngram (@keys) {
-		    if ($self->{table}[$n]{$ngram} <= $prunefrequency) {
+		    my $f = $self->{table}[$n]{$ngram};
+		    if ($f <= $prunefrequency) {
 			delete $self->{'table'}[$n]{$ngram};
 			$self->{'total'}[$n] -= $prunefrequency;
 			$self->{'total_distinct_count'} -= 1;
 		    }
+		    elsif ($nextprunefrequency > $f)
+		    { $nextprunefrequency = $f }
 		}
 
 		return if $self->{'total_distinct_count'} <= $self->{'limit'};
-
-	    }
-	}
-    }
-}
+		die if $nextprunefrequency <= $prunefrequency;
+}   }   }   }
 
 sub to_string {
     my $self = shift;
@@ -189,7 +195,10 @@ sub to_string {
 
     foreach my $n (1 .. $self->{windowsize}) {
 	{ my $tmp = "$n-GRAMS (total count: $self->{total}[$n])";
-	  $ret .= "$tmp\n" . ('-' x length($tmp)) . "\n";
+	  $ret .= "$tmp\n" .
+	      "FIRST N-GRAM: ".&encode_S($self->{firstngram}[$n]).
+	      "\n LAST N-GRAM: ".&encode_S($self->{lastngram}[$n])."\n".
+	      ('-' x length($tmp)) . "\n";
         }
 	my $total = $self->{total}[$n];
 
@@ -318,10 +327,9 @@ or different types of n-grams, e.g.:
   my $ng = Text::Ngrams->new( type => byte );
   my $ng = Text::Ngrams->new( type => word );
 
-or limit the total number of n-grams (less-frequent ones will be
-pruned):
+To process a list of files:
 
-  my $ng = Text::Ngrams->new( limit => 10 );
+  $ng->process_files('somefile.txt', 'otherfile.txt');
 
 =head1 DESCRIPTION
 
@@ -468,7 +476,7 @@ slow, so you can limit the total number of distinct n-grams which are
 counted to speed up processing.
 Less-frequent ones will be deleted.
 
-Beware: If a limit is set, the n-gram counts at the end may not be
+B<BEWARE:> If a limit is set, the n-gram counts at the end may not be
 correct due to periodical pruning of n-grams.
 
 =item windowsize
@@ -698,7 +706,9 @@ does handle multi-line tokens.
 =head1 THANKS
 
 I'd like to thank Jost Kriege and Shlomo Yona for bug reports,
-comments, and/or encouragement.
+comments, and/or encouragement,
+David Allen for localizing and reporting an important efficiency issue
+with ngram prunning.
 
 I will be grateful for comments, bug reports, or just letting me know
 that you used the module.
@@ -723,4 +733,4 @@ Simon Cozen's Text::Ngram module in CPAN.
 The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
 
 =cut
-# $Id: Ngrams.pm,v 1.19 2004/01/19 12:29:55 vlado Exp $
+# $Id: Ngrams.pm,v 1.23 2004/07/29 17:40:14 vlado Exp $
