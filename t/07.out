@@ -4,19 +4,19 @@ BEGIN OUTPUT BY Text::Ngrams version
 FIRST N-GRAM: The
  LAST N-GRAM: fox
 ------------------------
-fox	3
 brown	3
-quick	1
+fox	3
 The	1
+quick	1
 
 2-GRAMS (total count: 7)
-FIRST N-GRAM: The_brown
- LAST N-GRAM: brown_fox
+FIRST N-GRAM: The brown
+ LAST N-GRAM: brown fox
 ------------------------
-brown_fox	2
-fox_brown	2
-brown_quick	1
-The_brown	1
-quick_fox	1
+brown fox	2
+fox brown	2
+The brown	1
+quick fox	1
+brown quick	1
 
 END OUTPUT BY Text::Ngrams

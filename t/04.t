@@ -12,5 +12,4 @@ $ng->process_text(
 ');
 
 #putfile('t/04.out', normalize($ng->to_string('orderby' => 'ngram' )));
-is(normalize(scalar(getfile('t/04.out'))),
-   normalize($ng->to_string('orderby' => 'ngram' )));
+isn('t/04.out', $ng->to_string('orderby' => 'ngram' ));

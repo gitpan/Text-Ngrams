@@ -8,8 +8,8 @@ my $ng = Text::Ngrams->new(windowsize=>2, type=>'word');
 $ng->process_files('t/05.in');
 
 my $producedout = normalize($ng->to_string( orderby=>'frequency' ));
-my $oldout      = normalize(scalar(getfile('t/07.out')));
 #putfile('t/07.out', $producedout);
+my $oldout      = normalize(scalar(getfile('t/07.out')));
 
 # ordering may vary, so let us normalize it further
 $producedout = &normalize1( $producedout );

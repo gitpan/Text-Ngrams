@@ -15,12 +15,10 @@ $ng3->feed_tokens('g');
 $ng3->feed_tokens('h');
 
 #putfile('t/01.out', $ng3->to_string( 'orderby' => 'ngram' ));
-is (normalize($ng3->to_string( 'orderby' => 'ngram' )),
-    normalize(scalar(getfile('t/01.out'))));
+isn('t/01.out', $ng3->to_string( 'orderby' => 'ngram' ));
 
 is($ng3->{'total_distinct_count'}, 21);
-
-print $ng3->{'total_distinct_count'}."\n";
+#print $ng3->{'total_distinct_count'}."\n";
 
 is(Text::Ngrams::encode_S("abc\n\t\xF6lado"),
    'abc\\n\\t^vlado');

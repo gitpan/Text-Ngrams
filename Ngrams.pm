@@ -1,5 +1,3 @@
-# (c) 2003-2004 Vlado Keselj www.cs.dal.ca/~vlado
-
 package Text::Ngrams;
 
 use strict;
@@ -10,11 +8,11 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 @EXPORT = qw(new);
-$VERSION = '1.7';
+$VERSION = '1.8';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.33 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.41 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 use vars qw();			# non-exported package globals go here
@@ -32,14 +30,12 @@ sub new {
   delete($params{windowsize});
 
   if (! exists($params{type}) or $params{type} eq 'character') {
-      $self->{tokenseparator} = '';
       $self->{skiprex} = '';
       $self->{tokenrex} = qr/([a-zA-Z]|[^a-zA-Z]+)/;
       $self->{processtoken} =  sub { s/[^a-zA-Z]+/ /; $_ = uc $_ };
       $self->{allow_iproc} = 1;
   }
   elsif ($params{type} eq 'utf8') {
-      $self->{tokenseparator} = '';
       $self->{skiprex} = '';
       $self->{tokenrex} = qr/([\xF0-\xF4][\x80-\xBF][\x80-\xBF][\x80-\xBF]
                              |[\xE0-\xEF][\x80-\xBF][\x80-\xBF]
@@ -48,13 +44,11 @@ sub new {
       $self->{processtoken} = '';
   }
   elsif ($params{type} eq 'byte') {
-      $self->{tokenseparator} = '';
       $self->{skiprex} = '';
       $self->{tokenrex} = '';
       $self->{processtoken} = '';
   }
   elsif ($params{type} eq 'word') {
-      $self->{tokenseparator} = ' ';
       $self->{skiprex} = qr/[^a-zA-Z0-9]+/;
       $self->{skipinsert} = ' ';
       $self->{tokenrex} = qr/([a-zA-Z]+|(\d+(\.\d+)?|\d*\.\d+)([eE][-+]?\d+)?)/;
@@ -67,6 +61,10 @@ sub new {
   $self->{'total'} = [ ];
   $self->{'total_distinct_count'} = 0;
   $self->{'lastngram'} = [ ];
+  $self->{'next_token_id'} = 0;
+  $self->{'token_dict'} = { };
+  $self->{'token_S'} = [ ];
+  $self->{'token'} = [ ];
 
   foreach my $i ( 1 .. $self->{windowsize} ) {
       $self->{table}[$i] = { };
@@ -90,12 +88,21 @@ sub new {
 sub feed_tokens {
     my $self = shift;
     # count all n-grams sizes starting from max to 1
-    foreach my $t (@_) {
+    foreach my $t1 (@_) {
+	my $t = $t1;
+	if (defined($self->{token_dict}->{$t})) {
+	    $t = $self->{token_dict}->{$t};
+	} else {
+	    my $id = $self->{next_token_id}++;
+	    $self->{token_S}->[$id] = &encode_S($t);
+	    $self->{token}->[$id]   = $t;
+	    $t = $self->{token_dict}->{$t} = $id;
+	}
 	for (my $n=$self->{windowsize}; $n > 0; $n--) {
 	    if ($n > 1) {
-		next unless $self->{lastngram}[$n-1];
+		next unless $self->{lastngram}[$n-1] ne '';
 		$self->{lastngram}[$n] = $self->{lastngram}[$n-1] .
-		    $self->{tokenseparator} . $t;
+		    ' ' . $t;
 	    } else { $self->{lastngram}[$n] = $t }
 
 	    if ( ($self->{table}[$n]{$self->{lastngram}[$n]} += 1)==1)
@@ -125,6 +132,15 @@ sub _process_text {
                       # The remainder of unprocessed string is
                       # returned.
     if ($cont < 0) { $cont = 0 }
+
+    if (			# type is byte
+ 	$self->{skiprex}        eq '' and
+        $self->{tokenrex}       eq '' and
+        $self->{processtoken}   eq '' and
+ 	$cont == 0
+        )
+    { return $self->_process_text_byte(@_) }
+
     my (@tokens);
     my $text;
     while (@_) {
@@ -167,21 +183,39 @@ sub _process_text {
     return $text;
 }
 
+sub _process_text_byte {
+    my $self = shift;
+
+    for (my $i=0; $i<=$#_; ++$i) {
+	my @a = split('', $_[$i]);
+	next if $#a==-1;
+	$self->feed_tokens( @a );
+    }
+    return '';
+}
+
 sub process_files {
     my $self = shift;
     foreach my $f (@_) {
 	my $f1;
+	local *F;
 	if (not ref($f))
-	{ open($f1, "$f") or die "cannot open $f:$!" }
+	{ open(F, "$f") or die "cannot open $f:$!"; $f1 = *F }
 	else { $f1 = $f }
 
-	my ($text, $text_l) = ('', 0);
+	my ($text, $text_l, $cont) = ('', 0, 1);
+	if (			# type is byte
+ 	    $self->{skiprex}        eq '' and
+            $self->{tokenrex}       eq '' and
+            $self->{processtoken}   eq ''
+           )
+ 	{ $cont = 0 }
+
 	while (1) {
 	    $text_l = length($text);
 	    read($f1, $text, 1024, length($text));
-	    #$text.= <$f1>;
 	    last if length($text) <= $text_l;
-	    $text = $self->_process_text(1, $text);
+	    $text = $self->_process_text($cont, $text);
 	}
 	$text = $self->_process_text(0, $text);
 
@@ -218,6 +252,66 @@ sub _reduce_to_limit {
 		die if $nextprunefrequency <= $prunefrequency;
 }   }   }   }
 
+sub _keys_sorted {
+    my $self = shift;
+    my $n = shift;
+    my @k = keys(%{$self->{table}[$n]});
+    my %k1 = ();
+    foreach my $k (@k) {
+	$k1{
+	    join (' ', map { $self->{token}->[$_] } split(/ /, $k) )
+	    } = $k;
+    }
+    @k = ();
+    foreach my $k (sort(keys(%k1))) {
+	push @k, $k1{$k};
+    }
+    return @k;
+}
+
+# Contributed by Chris Jordan
+sub get_ngrams {
+    my $self = shift;
+    my (%params) = @_;
+  
+    #default value of 3 for ngram size
+    my $n = exists($params{'n'})? $params{'n'} : 3;
+    delete $params{'n'};
+
+    my $onlyfirst = exists($params{'onlyfirst'}) ?
+        $params{'onlyfirst'} : '';
+    delete $params{'onlyfirst'};
+
+    my $opt_normalize = $params{'normalize'};
+    delete $params{'normalize'};
+
+    my $total = $self->{total}[$n];
+    my @keys;
+    if (!exists($params{'orderby'}) or $params{'orderby'} eq 'ngram')
+    { @keys = $self->_keys_sorted($n) }
+    elsif ($params{'orderby'} eq 'none') {
+        die "onlyfirst requires order" if $onlyfirst;
+        @keys = keys(%{$self->{table}[$n]})
+	}
+    elsif ($params{'orderby'} eq 'frequency') {
+        @keys = sort { $self->{table}[$n]{$b} <=>
+		       $self->{table}[$n]{$a} }
+	keys(%{$self->{table}[$n]});
+    }
+    else { die }
+
+    @keys = splice(@keys,0,$onlyfirst) if $onlyfirst;
+
+    my @ret;
+    foreach my $ngram (@keys) {
+        my $count = $self->{table}[$n]{$ngram};
+        $count = ($opt_normalize ? ($count / $total ) : $count);
+	push @ret, $ngram, $count;
+    }
+
+    return @ret;
+}
+
 sub to_string {
     my $self = shift;
     my (%params) = @_;
@@ -235,20 +329,26 @@ sub to_string {
     my $opt_normalize = $params{'normalize'};
     delete $params{'normalize'};
 
-    my $ret = "BEGIN OUTPUT BY Text::Ngrams version $VERSION\n\n";
+    my $spartan = $params{'spartan'};
+    delete $params{'spartan'};
+
+    my $ret;
+    $ret = "BEGIN OUTPUT BY Text::Ngrams version $VERSION\n\n" unless $spartan;
 
     foreach my $n (1 .. $self->{windowsize}) {
-	{ my $tmp = "$n-GRAMS (total count: $self->{total}[$n])";
-	  $ret .= "$tmp\n" .
-	      "FIRST N-GRAM: ".&encode_S($self->{firstngram}[$n]).
-	      "\n LAST N-GRAM: ".&encode_S($self->{lastngram}[$n])."\n".
-	      ('-' x length($tmp)) . "\n";
+	if ($spartan and $n < $self->{windowsize}) { next }
+	if (! $spartan ) {
+	    my $tmp = "$n-GRAMS (total count: $self->{total}[$n])";
+	    $ret .= "$tmp\n" .
+		"FIRST N-GRAM: ".  $self->_encode_S($self->{firstngram}[$n]).
+		"\n LAST N-GRAM: ".$self->_encode_S($self->{lastngram}[$n])."\n".
+		('-' x length($tmp)) . "\n";
         }
 	my $total = $self->{total}[$n];
 
 	my @keys;
 	if (!exists($params{'orderby'}) or $params{'orderby'} eq 'ngram')
-	{ @keys = sort(keys(%{$self->{table}[$n]})) }
+	{ @keys = $self->_keys_sorted($n) }
 	elsif ($params{'orderby'} eq 'none') {
 	    die "onlyfirst requires order" if $onlyfirst;
 	    @keys = keys(%{$self->{table}[$n]})
@@ -264,16 +364,16 @@ sub to_string {
 
 	foreach my $ngram (@keys) {
 	    my $count = $self->{table}[$n]{$ngram};
-	    $ret .= &encode_S($ngram) . "\t" .
+	    $ret .= $self->_encode_S($ngram) . "\t" .
 		($opt_normalize ? ($count / $total ) : $count) ."\n";
 	    if ($out) { print $outh $ret; $ret = '' }
 
 	}
 
-	$ret .= "\n";
+	$ret .= "\n" unless $spartan;
     }
 
-    $ret .= "END OUTPUT BY Text::Ngrams\n";
+    $ret .= "END OUTPUT BY Text::Ngrams\n" unless $spartan;
 
     if ($out) {
 	print $outh $ret; $ret = '';
@@ -307,6 +407,16 @@ sub decode_S ( $ ) {
     }
 
     return $out;
+}
+
+sub _encode_S {
+    my $self = shift;
+    my @r = ();
+    while (@_) {
+	push @r,
+	map { $self->{token_S}->[$_] } split(/ /, shift @_);
+    }
+    return join(' ', @r);
 }
 
 # http://www.cs.dal.ca/~vlado/srcperl/snip/encode_S
@@ -348,6 +458,7 @@ For default character n-gram analysis of string:
   my $ng3 = Text::Ngrams->new;
   $ng3->process_text('abcdefg1235678hijklmnop');
   print $ng3->to_string;
+  my @ngramsarray = $ng3->get_ngrams;
 
 One can also feed tokens manually:
 
@@ -562,12 +673,9 @@ when n-grams are formed.
 One can also modify type, creating its own type, by fine-tuning several parameters
 (they can be undefined):
 
-$o->{tokenseparator} - string used to be inserted between tokens in n-gram
-(for characters it is empty, and for words it is a space).
-
 $o->{skiprex} - regular expression for ignoring stuff between tokens.
 
-$o->{skipinsert} - string to be replace a skiprex match that makes
+$o->{skipinsert} - string to replace a skiprex match that makes
     string too short (efficiency issue)
 
 $o->{tokenrex} - regular expression for recognizing a token.  If it is
@@ -582,20 +690,17 @@ For example, the types character, byte, and word are defined in the
 foolowing way:
 
   if ($params{type} eq 'character') {
-      $self->{tokenseparator} = '';
       $self->{skiprex} = '';
       $self->{tokenrex} = qr/([a-zA-Z]|[^a-zA-Z]+)/;
       $self->{processtoken} =  sub { s/[^a-zA-Z]+/ /; $_ = uc $_ }
       $self->{allow_iproc} = 1;
   }
   elsif ($params{type} eq 'byte') {
-      $self->{tokenseparator} = '';
       $self->{skiprex} = '';
       $self->{tokenrex} = '';
       $self->{processtoken} = '';
   }
   elsif ($params{type} eq 'utf8') {
-      $self->{tokenseparator} = '';
       $self->{skiprex} = '';
       $self->{tokenrex} = qr/([\xF0-\xF4][\x80-\xBF][\x80-\xBF][\x80-\xBF]
                              |[\xE0-\xEF][\x80-\xBF][\x80-\xBF]
@@ -604,7 +709,6 @@ foolowing way:
       $self->{processtoken} = '';
   }
   elsif ($params{type} eq 'word') {
-      $self->{tokenseparator} = ' ';
       $self->{skiprex} = qr/[^a-zA-Z0-9]+/;
       $self->{skipinsert} = ' ';
       $self->{tokenrex} = qr/([a-zA-Z]+|(\d+(\.\d+)?|\d*\.\d+)([eE][-+]?\d+)?)/;
@@ -634,7 +738,13 @@ Process files, similarly to text.
 The files are processed line by line, so there should not be any
 multi-line tokens.
 
-=head2 to_string ( orderby => 'ngram|frequency|none', onlyfirst => NUMBER, out => filename|handle, normalize => 1 )
+=head2 get_ngrams(orderby=>'ngram|frequency|none',onlyfirst=>NUMBER,out=>filename|handle,normalize=>1)
+
+Returns an array of requested n-grams and their friequencies in order
+(ngram1, f1, ngram2, f2, ...).  The use of parameters is identical to
+the fuction C<to_string>.
+
+=head2 to_string(orderby=>'ngram|frequency|none',onlyfirst=>NUMBER,out=>filename|handle,normalize=>1,spartan=>1)
 
   print $ng3->to_string;
   print $ng->to_string( orderby=>'frequency' );
@@ -672,6 +782,13 @@ This is a boolean parameter.  By default, it is false (''), in which
 case n-gram counts are produced.  If it is true (e.g., 1), the output
 will contain normalized frequencies; i.e., n-gram counts divided by
 the total number of n-grams of the same size.
+
+=item C<spartan>
+
+This is a boolean parameter.  By default, it is false (''), in which
+case n-grams for n=1 up to the maximal value are printed.  If it is
+true, only a list of the most frequent n-grams with the maximal length
+is printed.
 
 =back
 
@@ -781,7 +898,10 @@ that you used the module.
 
 =head1 AUTHOR
 
-Copyright 2003-2004 Vlado Keselj www.cs.dal.ca/~vlado
+Contributors:
+
+ 2003-2005 Vlado Keselj www.cs.dal.ca/~vlado
+      2005 Chris Jordan (contributed get_strings)
 
 This module is provided "as is" without expressed or implied warranty.
 This is free software; you can redistribute it and/or modify it under
@@ -799,4 +919,4 @@ Simon Cozen's Text::Ngram module in CPAN.
 The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
 
 =cut
-# $Id: Ngrams.pm,v 1.33 2004/12/08 13:15:00 vlado Exp $
+# $Id: Ngrams.pm,v 1.41 2005/12/15 15:48:21 vlado Exp $
