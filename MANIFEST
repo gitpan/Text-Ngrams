@@ -31,4 +31,9 @@ t/10.t
 t/11.in
 t/11.out
 t/11.t
+t/12.in
+t/12.out
+t/12.t
+t/13.out
+t/13.t
 t/auxfunctions.pl

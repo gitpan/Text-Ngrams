@@ -36,7 +36,7 @@ Revision history for Perl extension Text::Ngrams.
 	- resolved efficiency issue with binary file (not reading line
   	  by line any more)
 	- introduced parameters skipinsert and allow_iproc
-	- thanks to Andrija, Roger Zhang for suggestions
+	- thanks to Andrija Tomovic, Roger Zhang for suggestions
 
 1.4   Wed Nov  3 08:45:27 AST 2004
 	- Fixed minor testing bugs, a warning
@@ -57,3 +57,7 @@ Revision history for Perl extension Text::Ngrams.
 	- function get_ngrams added
 	- changed output format to include space between tokens
 	  (no token separator)
+
+1.9   Mon Nov  6 07:20:42 AST 2006
+	- bug fixed in get_ngrams
+	- added option spartan to script ngrams.pl

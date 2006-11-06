@@ -8,11 +8,11 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 @EXPORT = qw(new);
-$VERSION = '1.8';
+$VERSION = '1.9';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.41 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.45 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 use vars qw();			# non-exported package globals go here
@@ -269,13 +269,13 @@ sub _keys_sorted {
     return @k;
 }
 
-# Contributed by Chris Jordan
+# Initial version contributed by Chris Jordan 2005
 sub get_ngrams {
     my $self = shift;
     my (%params) = @_;
   
     #default value of 3 for ngram size
-    my $n = exists($params{'n'})? $params{'n'} : 3;
+    my $n = exists($params{'n'})? $params{'n'} : $self->{windowsize};
     delete $params{'n'};
 
     my $onlyfirst = exists($params{'onlyfirst'}) ?
@@ -306,7 +306,7 @@ sub get_ngrams {
     foreach my $ngram (@keys) {
         my $count = $self->{table}[$n]{$ngram};
         $count = ($opt_normalize ? ($count / $total ) : $count);
-	push @ret, $ngram, $count;
+	push @ret, $self->_encode_S($ngram), $count;
     }
 
     return @ret;
@@ -890,8 +890,8 @@ does handle multi-line tokens.
 
 I would like to thank cpan-testers, Jost Kriege, Shlomo Yona, David
 Allen (for localizing and reporting and efficiency issue with ngram
-prunning), Andrija, Roger Zhang, Jeremy Moses, and Kevin J. Ziese for
-bug reports and comments.
+prunning), Andrija, Roger Zhang, Jeremy Moses, Kevin J. Ziese, Hassen
+Bouzgou, Michael Ricie, and Jingyi Yang for bug reports and comments.
 
 I will be grateful for comments, bug reports, or just letting me know
 that you used the module.
@@ -900,7 +900,7 @@ that you used the module.
 
 Contributors:
 
- 2003-2005 Vlado Keselj www.cs.dal.ca/~vlado
+ 2003-2006 Vlado Keselj www.cs.dal.ca/~vlado
       2005 Chris Jordan (contributed get_strings)
 
 This module is provided "as is" without expressed or implied warranty.
@@ -919,4 +919,4 @@ Simon Cozen's Text::Ngram module in CPAN.
 The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
 
 =cut
-# $Id: Ngrams.pm,v 1.41 2005/12/15 15:48:21 vlado Exp $
+# $Id: Ngrams.pm,v 1.45 2006/11/06 11:19:34 vlado Exp $

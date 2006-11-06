@@ -4,14 +4,14 @@ use strict;
 use vars qw($VERSION);
 #<? read_starfish_conf(); echo "\$VERSION = $ModuleVersion;"; !>
 #+
-$VERSION = 1.8;
+$VERSION = 1.9;
 #-
-# $Revision: 1.20 $
+# $Revision: 1.22 $
 
 use Text::Ngrams;
 use Getopt::Long;
 
-my ($help, $version, $orderby, $onlyfirst, $limit);
+my ($help, $version, $orderby, $onlyfirst, $limit, $spartan);
 my $n = 3;
 my $type = 'character';
 
@@ -23,17 +23,22 @@ Options:
 --n=N		The default is 3-grams.
 --normalize     Produce normalized frequencies (divided by the total
                 number of n-grams of the same size)
---type=T        The default is character.  For more types see
-                Text::Ngrams module.
+--type=T        The default is character.  Other types include: byte,
+                words, utf8, or there can be user-defined types.
 --limit=N       Limit the number of distinct n-grams.
                 BEWARE: Final tables may be inaccurate if limit is used.
 --help		Show this help.
 --version	Show version.
 --orderby=ARG   ARG can be: frequency or ngram.
 --onlyfirst=N   Only first N ngrams are printed for each n.
+--spartan       If specified, only the n-grams of maximal length are
+                printed.
 
 The options can be shortened to their unique prefixes and
 the two dashes to one dash.  No files means using STDIN.
+
+NOTE: The documentation of the module Text::Ngrams.pl provides more
+information.
 EOF
     exit(1);
 }
@@ -49,7 +54,8 @@ help()
 		 'help'       => \$help,
 		 'version'    => \$version,
                  'orderby=s'  => \$orderby,
-                 'onlyfirst=i' => \$onlyfirst);
+                 'onlyfirst=i' => \$onlyfirst,
+		 'spartan'    => \$spartan);
 
 help() if $n < 1 || int($n) != $n;
 
@@ -74,6 +80,7 @@ else { $ng->process_files(\*STDIN) }
 if (defined($orderby) and $orderby) { $params{'orderby'} = $orderby }
 if (defined($onlyfirst) and $onlyfirst>0) { $params{'onlyfirst'} = $onlyfirst }
 if ($opt_normalize) { $params{'normalize'} = $opt_normalize }
+if ($spartan)       { $params{'spartan'} = $spartan }
 
 print $ng->to_string( %params );
 
@@ -152,7 +159,7 @@ Text::Ngrams module.
 
 =head1 COPYRIGHT
 
-Copyright 2003-2004 Vlado Keselj F<http://www.cs.dal.ca/~vlado>
+Copyright 2003-2006 Vlado Keselj F<http://www.cs.dal.ca/~vlado>
 
 This module is provided "as is" without expressed or implied warranty.
 This is free software; you can redistribute it and/or modify it under
