@@ -61,3 +61,6 @@ Revision history for Perl extension Text::Ngrams.
 1.9   Mon Nov  6 07:20:42 AST 2006
 	- bug fixed in get_ngrams
 	- added option spartan to script ngrams.pl
+
+2.001
+	- fixed bug in to_string for writing to a file with given name

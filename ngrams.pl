@@ -4,9 +4,9 @@ use strict;
 use vars qw($VERSION);
 #<? read_starfish_conf(); echo "\$VERSION = $ModuleVersion;"; !>
 #+
-$VERSION = 1.9;
+$VERSION = 2.001;
 #-
-# $Revision: 1.22 $
+# $Revision: 1.24 $
 
 use Text::Ngrams;
 use Getopt::Long;

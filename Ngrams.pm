@@ -1,3 +1,7 @@
+# (c) 2003-2008 Vlado Keselj http://www.cs.dal.ca/~vlado
+#
+# Text::Ngrams - A Perl module for N-grams processing
+
 package Text::Ngrams;
 
 use strict;
@@ -8,11 +12,11 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 @EXPORT = qw(new);
-$VERSION = '1.9';
+$VERSION = '2.001';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.45 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.47 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 use vars qw();			# non-exported package globals go here
@@ -323,8 +327,10 @@ sub to_string {
     my $out =  exists($params{'out'}) ? $params{'out'} : '';
     delete $params{'out'};
     my $outh = $out;
-    if ($out and (not ref($out))) 
-    { open($outh, ">$out") or die "cannot open $out:$!" }
+    if ($out and (not ref($out))) {
+	local *FH; open(FH, ">$out") or die "cannot open $out:$!";
+        $outh = *FH;
+    }
 
     my $opt_normalize = $params{'normalize'};
     delete $params{'normalize'};
@@ -486,6 +492,10 @@ or different types of n-grams, e.g.:
 To process a list of files:
 
   $ng->process_files('somefile.txt', 'otherfile.txt');
+
+To read the standard input or another file handle:
+
+  $ng->process_files(\*STDIN);
 
 =head1 DESCRIPTION
 
@@ -919,4 +929,4 @@ Simon Cozen's Text::Ngram module in CPAN.
 The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
 
 =cut
-# $Id: Ngrams.pm,v 1.45 2006/11/06 11:19:34 vlado Exp $
+# $Id: Ngrams.pm,v 1.47 2008/10/25 02:54:26 vlado Exp $
