@@ -12,11 +12,11 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 @EXPORT = qw(new);
-$VERSION = '2.001';
+$VERSION = '2.002';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.47 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.49 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 use vars qw();			# non-exported package globals go here
@@ -497,6 +497,16 @@ To read the standard input or another file handle:
 
   $ng->process_files(\*STDIN);
 
+To read a file named file.txt and create a profile file file.profile
+of 100 most frequent, normalized byte tri-grams:
+
+  use Text::Ngrams;
+  my $ng = Text::Ngrams->new( windowsize => 3, type => byte );
+  $ng->process_files("file.txt");
+  $ng->to_string( orderby=>'frequency', onlyfirst=>100,
+                out => "file.profile", normalize=>1,
+                spartan=>1);
+
 =head1 DESCRIPTION
 
 This module implement text n-gram analysis, supporting several types of
@@ -929,4 +939,4 @@ Simon Cozen's Text::Ngram module in CPAN.
 The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
 
 =cut
-# $Id: Ngrams.pm,v 1.47 2008/10/25 02:54:26 vlado Exp $
+# $Id: Ngrams.pm,v 1.49 2008/10/25 03:19:47 vlado Exp $
