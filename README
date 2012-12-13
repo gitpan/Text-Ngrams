@@ -1,7 +1,7 @@
 <? read_starfish_conf(); $t= "Text::Ngrams version $ModuleVersion";
 echo "$t\n".'='x length($t); !>
 #+
-Text::Ngrams version 2.002
+Text::Ngrams version 2.003
 ==========================
 #-
 
@@ -29,8 +29,9 @@ something important to add.
 
 COPYRIGHT AND LICENCE
 
-Copyright    2003-2008 Vlado Keselj www.cs.dal.ca/~vlado
+Copyright    2003-2012 Vlado Keselj web.cs.dal.ca/~vlado
 and contributors: 2005 Chris Jordan (contributed get_ngrams)
+      2012 Magdalena Jankowska (utf8_character ngrams type)
 
 This script is provided "as is" without express or implied warranty.
 This is free software; you can redistribute it and/or modify it under

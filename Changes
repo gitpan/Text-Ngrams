@@ -69,3 +69,11 @@ Revision history for Perl extension Text::Ngrams.
 	- Improved documentation.
 	- changed perl to $^X in test 06, which may cause problems
   	  with testing
+
+2.003 Wed Dec 12 23:38:15 AST 2012
+	- minor code improvements
+	- documentation and report improvements
+	- testing improvement: added 14.t
+	- introduced n-grams type utf8_character, thanks to Magdalenda
+	  Jankowska
+	- a bug fix thanks to Magdalena Jankowska

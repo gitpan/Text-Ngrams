@@ -1,4 +1,4 @@
-# (c) 2003-2008 Vlado Keselj http://www.cs.dal.ca/~vlado
+# (c) 2003-2012 Vlado Keselj http://web.cs.dal.ca/~vlado
 #
 # Text::Ngrams - A Perl module for N-grams processing
 
@@ -12,11 +12,11 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 %EXPORT_TAGS = ( 'all' => [ qw(new encode_S decode_S) ] );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 @EXPORT = qw(new);
-$VERSION = '2.002';
+$VERSION = '2.003';
 
 use vars qw($Version $Revision);
 $Version = $VERSION;
-($Revision = substr(q$Revision: 1.49 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 395 $, 10)) =~ s/\s+$//;
 
 use vars @EXPORT_OK;
 use vars qw();			# non-exported package globals go here
@@ -47,6 +47,34 @@ sub new {
                              |[\x00-\xFF])/x;
       $self->{processtoken} = '';
   }
+  #MJ ->
+  #this type is analogous to the "character" type but defined for utf8 characters
+  elsif ($params{type} eq 'utf8_character') {
+      #$self->{inputlayer}        
+      #input layer to be put on the input stream by the function binmode before reading from a given stream
+      #and to be removed by ***binmode HANDLE,":pop"*** after the reading from the particular stream is done
+      #has to be a real layer (like ":encoding(utf8)"), not a pseudo layer (like ":utf8")
+      #so that the psuedo layer ":pop" is able to remove this input layer 
+      
+      $self->{inputlayer}=':encoding(utf8)';
+      #this will automatically decode input text from utf8 into Perl internal reporesentation of Unicode strings
+      #and so the regular expressions for Unicode as well as the uc function can be performed on them
+      
+     
+      $self->{skiprex} = '';
+     
+      $self->{tokenrex} = qr/(\p{IsAlpha}|\P{IsAlpha}+)/;
+                 
+      $self->{processtoken} =  sub { s/\P{IsAlpha}+/ /; $_ = uc $_ ; $_=Encode::encode_utf8( $_ );};
+      #the last operation ***$_=Encode::encode_utf8( $_ )*** is necessary 
+      #to go back to utf8 encoding from the internal Perl representation
+      #so that for the output the n-grams are in utf8 (encoded by encode_S though)
+      
+      $self->{allow_iproc} = 0;
+      #allow_iproc has to be 0. Otherwise the last token in the read block will be preprocessed and encoded in utf8,
+      #and then attached at the beginning of the next block read from input, which will be in the internal Perl representation
+  }
+  #MJ <-
   elsif ($params{type} eq 'byte') {
       $self->{skiprex} = '';
       $self->{tokenrex} = '';
@@ -200,12 +228,25 @@ sub _process_text_byte {
 
 sub process_files {
     my $self = shift;
+
+    #MJ ->
+    my $input_layer='';
+    if (defined($self->{inputlayer})) {$input_layer=$self->{inputlayer};}
+    #MJ <-
+
     foreach my $f (@_) {
 	my $f1;
 	local *F;
 	if (not ref($f))
 	{ open(F, "$f") or die "cannot open $f:$!"; $f1 = *F }
 	else { $f1 = $f }
+
+	#MJ ->
+	#put the encoding layer on the input when requested
+	if ($input_layer ne '') {
+		binmode $f1, $input_layer;
+	}
+	#MJ <-
 
 	my ($text, $text_l, $cont) = ('', 0, 1);
 	if (			# type is byte
@@ -222,6 +263,15 @@ sub process_files {
 	    $text = $self->_process_text($cont, $text);
 	}
 	$text = $self->_process_text(0, $text);
+
+	#MJ ->
+	#remove the encoding layer from the input stream if it was added
+	#Caution: here is what the Perl documentation says about the pseudo layer ":pop"
+	#"Should be considered as experimental. (...) A more elegant (and safer) interface is needed."
+	if ($input_layer ne '') {
+		binmode $f1,":pop";   
+	}
+	#MJ <-
 
 	close($f1) if not ref($f);
 	if (exists($self->{'limit'})) { $self->_reduce_to_limit }
@@ -273,21 +323,12 @@ sub _keys_sorted {
     return @k;
 }
 
-# Initial version contributed by Chris Jordan 2005
 sub get_ngrams {
     my $self = shift;
     my (%params) = @_;
-  
-    #default value of 3 for ngram size
     my $n = exists($params{'n'})? $params{'n'} : $self->{windowsize};
-    delete $params{'n'};
-
-    my $onlyfirst = exists($params{'onlyfirst'}) ?
-        $params{'onlyfirst'} : '';
-    delete $params{'onlyfirst'};
-
-    my $opt_normalize = $params{'normalize'};
-    delete $params{'normalize'};
+    my $onlyfirst = exists($params{'onlyfirst'}) ? $params{'onlyfirst'} : '';
+    my $opt_normalize = exists($params{'normalize'}) ?$params{'normalize'} : '';
 
     my $total = $self->{total}[$n];
     my @keys;
@@ -338,7 +379,7 @@ sub to_string {
     my $spartan = $params{'spartan'};
     delete $params{'spartan'};
 
-    my $ret;
+    my $ret='';
     $ret = "BEGIN OUTPUT BY Text::Ngrams version $VERSION\n\n" unless $spartan;
 
     foreach my $n (1 .. $self->{windowsize}) {
@@ -632,7 +673,7 @@ Or, in case of byte type of processing:
 
 =head1 METHODS
 
-=head2 new ( windowsize => POS_INTEGER, type => character|byte|word|utf8, limit => POS_INTEGER )
+=head2 new ( windowsize => POS_INTEGER, type => character|byte|word|utf8|utf8_character, limit => POS_INTEGER )
 
   my $ng = Text::Ngrams->new;
   my $ng = Text::Ngrams->new( windowsize=>10 );
@@ -688,6 +729,10 @@ One token is a word consisting of letters, digits and decimal digit
 are replaced by <NUMBER>, and everything else is ignored.  A space is inserted
 when n-grams are formed.       
 
+=item utf8_character
+UTF8 analogue of the "character" type: from a UTF8 encoded text reads letters,
+sequences of all other characters are replaced by a space, letters are turned uppercase 
+
 =back
 
 One can also modify type, creating its own type, by fine-tuning several parameters
@@ -705,6 +750,12 @@ $o->{processtoken} - routine for token preprocessing.  Token is given and return
 
 $o->{allow_iproc} - boolean, if set to true (1) allows for incomplete
     tokens to be preprocessed and put back (efficiency motivation)
+
+$o->{inputlayer} - input layer to be put on the input stream by the function binmode 
+    before reading from a given stream and to be removed by ***binmode HANDLE,":pop"*** 
+    after the reading from the particular stream is done.
+    Has to be a real layer (like ":encoding(utf8)"), not a pseudo layer (like ":utf8")
+    so that the psuedo layer ":pop" is able to remove this input layer 
 
 For example, the types character, byte, and word are defined in the
 foolowing way:
@@ -913,21 +964,31 @@ Allen (for localizing and reporting and efficiency issue with ngram
 prunning), Andrija, Roger Zhang, Jeremy Moses, Kevin J. Ziese, Hassen
 Bouzgou, Michael Ricie, and Jingyi Yang for bug reports and comments.
 
+Thanks to Chris Jordan for providing initial implementation of the
+function get_strings (2005).
+
+Thanks to Magdalenda Jankowska for implementing a new ngrams type
+utf8_character, which is very useful in processing non-English text;
+and for a bug fix.
+
 I will be grateful for comments, bug reports, or just letting me know
 that you used the module.
 
 =head1 AUTHOR
 
-Contributors:
+Author:
 
- 2003-2006 Vlado Keselj www.cs.dal.ca/~vlado
-      2005 Chris Jordan (contributed get_strings)
+ 2003-2012 Vlado Keselj http://web.cs.dal.ca/~vlado
+
+Contributors:
+      2005 Chris Jordan (contributed get_ngrams)
+      2012 Magdalena Jankowska (utf8_character ngrams type)
 
 This module is provided "as is" without expressed or implied warranty.
 This is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
 
-The latest version can be found at F<http://www.cs.dal.ca/~vlado/srcperl/>.
+The latest version can be found at F<http://web.cs.dal.ca/~vlado/srcperl/>.
 
 =head1 SEE ALSO
 
@@ -936,7 +997,7 @@ Waterloo Statistical N-Gram Language Modeling Toolkit in C++ by Fuchun Peng,
 Perl script ngram.pl by Jarkko Hietaniemi,
 Simon Cozen's Text::Ngram module in CPAN.
 
-The links should be available at F<http://www.cs.dal.ca/~vlado/nlp>.
+The links should be available at F<http://web.cs.dal.ca/~vlado/nlp>.
 
 =cut
-# $Id: Ngrams.pm,v 1.49 2008/10/25 03:19:47 vlado Exp $
+# $Id: Ngrams.pm 395 2012-12-13 03:49:08Z vlado $

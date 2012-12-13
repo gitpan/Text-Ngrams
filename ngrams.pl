@@ -4,9 +4,9 @@ use strict;
 use vars qw($VERSION);
 #<? read_starfish_conf(); echo "\$VERSION = $ModuleVersion;"; !>
 #+
-$VERSION = 2.002;
+$VERSION = 2.003;
 #-
-# $Revision: 1.25 $
+# $Revision: 1.26 $
 
 use Text::Ngrams;
 use Getopt::Long;
@@ -159,12 +159,12 @@ Text::Ngrams module.
 
 =head1 COPYRIGHT
 
-Copyright 2003-2006 Vlado Keselj F<http://www.cs.dal.ca/~vlado>
+Copyright 2003-2012 Vlado Keselj F<http://web.cs.dal.ca/~vlado>
 
 This module is provided "as is" without expressed or implied warranty.
 This is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
 
-The latest version can be found at F<http://www.cs.dal.ca/~vlado/srcperl/>.
+The latest version can be found at F<http://web.cs.dal.ca/~vlado/srcperl/>.
 
 =cut

@@ -36,5 +36,10 @@ t/12.out
 t/12.t
 t/13.out
 t/13.t
+t/14.in
+t/14.out
+t/14.t
+t/15.t
+t/15.out
 t/auxfunctions.pl
 META.yml                                 Module meta-data (added by MakeMaker)
